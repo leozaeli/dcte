@@ -35,7 +35,8 @@ const PAYMENT_OPTIONS = [
   'A combinar',
 ];
 
-type Item = { id: string; desc: string; qty: number; unit: string; price: number };
+type Mat  = { id: string; desc: string; qty: number; unit: string; price: number };
+type Item = { id: string; desc: string; qty: number; unit: string; price: number; mats: Mat[] };
 
 function genId() { return Math.random().toString(36).slice(2, 8); }
 function genNumber() {
@@ -80,9 +81,7 @@ export default function PropostaPage() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [deadline, setDeadline] = useState('');
 
-  // Materials
   const [materialsIncluded, setMaterialsIncluded] = useState(false);
-  const [materials, setMaterials] = useState<Item[]>([]);
 
   const [observations, setObservations] = useState('');
   const [generatedUrl, setGeneratedUrl] = useState('');
@@ -102,24 +101,31 @@ export default function PropostaPage() {
 
   // Services
   const addItem = useCallback((desc: string) => {
-    setItems(prev => [...prev, { id: genId(), desc, qty: 1, unit: 'un', price: 0 }]);
+    setItems(prev => [...prev, { id: genId(), desc, qty: 1, unit: 'un', price: 0, mats: [] }]);
     setSearch(''); setShowSuggestions(false);
   }, []);
   const removeItem = useCallback((id: string) => setItems(prev => prev.filter(i => i.id !== id)), []);
-  const updateItem = useCallback(<K extends keyof Item>(id: string, key: K, val: Item[K]) =>
+  const updateItem = useCallback(<K extends keyof Omit<Item,'mats'>>(id: string, key: K, val: Item[K]) =>
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i)), []);
 
-  // Materials
-  const addMaterial = useCallback(() =>
-    setMaterials(prev => [...prev, { id: genId(), desc: '', qty: 1, unit: 'un', price: 0 }]), []);
-  const removeMaterial = useCallback((id: string) => setMaterials(prev => prev.filter(m => m.id !== id)), []);
-  const updateMaterial = useCallback(<K extends keyof Item>(id: string, key: K, val: Item[K]) =>
-    setMaterials(prev => prev.map(m => m.id === id ? { ...m, [key]: val } : m)), []);
+  // Per-item materials
+  const addMat = useCallback((itemId: string) =>
+    setItems(prev => prev.map(i => i.id === itemId
+      ? { ...i, mats: [...i.mats, { id: genId(), desc: '', qty: 1, unit: 'un', price: 0 }] }
+      : i)), []);
+  const removeMat = useCallback((itemId: string, matId: string) =>
+    setItems(prev => prev.map(i => i.id === itemId
+      ? { ...i, mats: i.mats.filter(m => m.id !== matId) }
+      : i)), []);
+  const updateMat = useCallback(<K extends keyof Omit<Mat,'id'>>(itemId: string, matId: string, key: K, val: Mat[K]) =>
+    setItems(prev => prev.map(i => i.id === itemId
+      ? { ...i, mats: i.mats.map(m => m.id === matId ? { ...m, [key]: val } : m) }
+      : i)), []);
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const discountVal = subtotal * (discount / 100);
   const calcTotal = subtotal - discountVal;
-  const materialsTotal = materials.reduce((s, m) => s + m.qty * m.price, 0);
+  const materialsTotal = items.reduce((s, i) => s + i.mats.reduce((ms, m) => ms + m.qty * m.price, 0), 0);
   const displayTotal = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcTotal;
 
   function handleGenerate() {
@@ -128,13 +134,15 @@ export default function PropostaPage() {
     const data = {
       number, date, validity,
       clientName, clientDoc, clientAddr, clientPhone, clientEmail,
-      items: items.map(({ id: _id, ...rest }) => rest),
+      items: items.map(({ id: _id, mats, ...rest }) => ({
+        ...rest,
+        mats: materialsIncluded ? mats.map(({ id: _mid, ...m }) => m) : [],
+      })),
       totalOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
       discount,
       payment, paymentNotes,
       deadline,
       materialsIncluded,
-      materials: materialsIncluded ? materials.map(({ id: _id, ...rest }) => rest) : [],
       observations,
     };
     const encoded = encodeProposal(data);
@@ -157,7 +165,7 @@ export default function PropostaPage() {
 
   function handleClear() {
     if (!confirm('Limpar toda a proposta?')) return;
-    setItems([]); setMaterials([]); setMaterialsIncluded(false);
+    setItems([]); setMaterialsIncluded(false);
     setClientName(''); setClientDoc(''); setClientAddr('');
     setClientPhone(''); setClientEmail(''); setObservations('');
     setDiscount(0); setDeadline(''); setPayment(PAYMENT_OPTIONS[0]);
@@ -237,6 +245,24 @@ export default function PropostaPage() {
           {/* Serviços */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-bolt" /> Serviços</h3>
+
+            {/* Toggle de materiais — antes da seleção */}
+            <div className="prop-toggle-row">
+              <div className="prop-toggle-info">
+                <span className="prop-toggle-label">Materiais inclusos</span>
+                <span className="prop-toggle-sub">
+                  {materialsIncluded
+                    ? `${items.reduce((n,i) => n + i.mats.length, 0)} item(s) · ${fmtBRL(materialsTotal)}`
+                    : 'Ativar para adicionar materiais por serviço'}
+                </span>
+              </div>
+              <button
+                className={`prop-toggle ${materialsIncluded ? 'active' : ''}`}
+                onClick={() => setMaterialsIncluded(v => !v)}
+                aria-label="Alternar materiais inclusos"
+              />
+            </div>
+
             <div className="prop-search-wrap">
               <div className="prop-search-box">
                 <i className="fas fa-search prop-search-icon" />
@@ -324,75 +350,41 @@ export default function PropostaPage() {
                   </div>
                 </div>
                 <div className="prop-item-total">Subtotal: <strong>{fmtBRL(item.qty * item.price)}</strong></div>
+
+                {/* Materiais deste serviço */}
+                {materialsIncluded && (
+                  <div className="prop-item-mats">
+                    <div className="prop-item-mats-header">
+                      <i className="fas fa-boxes" /> Materiais deste serviço
+                    </div>
+                    {item.mats.map((mat, midx) => (
+                      <div className="prop-mat-row" key={mat.id}>
+                        <span className="prop-mat-num">{midx+1}</span>
+                        <input value={mat.desc} onChange={e => updateMat(item.id, mat.id,'desc',e.target.value)} className="prop-input prop-mat-desc" placeholder="Material..." />
+                        <input type="number" min="1" value={mat.qty} onChange={e => updateMat(item.id, mat.id,'qty',Number(e.target.value))} className="prop-input prop-mat-qty" />
+                        <select value={mat.unit} onChange={e => updateMat(item.id, mat.id,'unit',e.target.value)} className="prop-input prop-select prop-mat-unit">
+                          {['un','pç','m','m²','rolo','cx','kg','vb'].map(u => <option key={u}>{u}</option>)}
+                        </select>
+                        <input type="number" min="0" step="0.01" value={mat.price} onChange={e => updateMat(item.id, mat.id,'price',Number(e.target.value))} className="prop-input prop-mat-price" placeholder="R$" />
+                        <button className="prop-item-remove prop-mat-remove" onClick={() => removeMat(item.id, mat.id)}><i className="fas fa-times" /></button>
+                      </div>
+                    ))}
+                    <button className="prop-mat-add" onClick={() => addMat(item.id)}>
+                      <i className="fas fa-plus" /> material
+                    </button>
+                    {item.mats.length > 0 && (
+                      <div className="prop-mat-subtotal">
+                        Materiais: <strong>{fmtBRL(item.mats.reduce((s,m) => s + m.qty * m.price, 0))}</strong>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             {items.length > 0 && (
               <div className="prop-field prop-discount">
                 <label>Desconto (%)</label>
                 <input type="number" min="0" max="100" value={discount} onChange={e => setDiscount(Number(e.target.value))} className="prop-input" style={{maxWidth:'100px'}} />
-              </div>
-            )}
-
-            {/* ── Materiais ──────────────────────────────────── */}
-            <div className="prop-section-divider">
-              <i className="fas fa-boxes" /> Materiais
-            </div>
-
-            <div className="prop-toggle-row">
-              <div className="prop-toggle-info">
-                <span className="prop-toggle-label">Materiais inclusos</span>
-                <span className="prop-toggle-sub">
-                  {materialsIncluded ? `${materials.length} item(s) · ${fmtBRL(materialsTotal)}` : 'Não incluso nesta proposta'}
-                </span>
-              </div>
-              <button
-                className={`prop-toggle ${materialsIncluded ? 'active' : ''}`}
-                onClick={() => setMaterialsIncluded(v => !v)}
-                aria-label="Alternar materiais inclusos"
-              />
-            </div>
-
-            {materialsIncluded && (
-              <div className="prop-materials-list">
-                {materials.length === 0 && <p className="prop-empty">Nenhum material adicionado.</p>}
-                {materials.map((mat, idx) => (
-                  <div className="prop-item prop-item-material" key={mat.id}>
-                    <div className="prop-item-header">
-                      <span className="prop-item-num prop-item-num-mat">{idx+1}</span>
-                      <button className="prop-item-remove" onClick={() => removeMaterial(mat.id)}><i className="fas fa-times" /></button>
-                    </div>
-                    <div className="prop-field">
-                      <label>Material / Descrição</label>
-                      <input value={mat.desc} onChange={e => updateMaterial(mat.id,'desc',e.target.value)} className="prop-input" placeholder="Ex: Cabo 2,5mm² — 100m" />
-                    </div>
-                    <div className="prop-row prop-row-3">
-                      <div className="prop-field">
-                        <label>Qtd</label>
-                        <input type="number" min="1" value={mat.qty} onChange={e => updateMaterial(mat.id,'qty',Number(e.target.value))} className="prop-input" />
-                      </div>
-                      <div className="prop-field">
-                        <label>Unid.</label>
-                        <select value={mat.unit} onChange={e => updateMaterial(mat.id,'unit',e.target.value)} className="prop-input prop-select">
-                          {['un','pç','m','m²','rolo','cx','kg','vb'].map(u => <option key={u}>{u}</option>)}
-                        </select>
-                      </div>
-                      <div className="prop-field">
-                        <label>Valor unit. (R$)</label>
-                        <input type="number" min="0" step="0.01" value={mat.price} onChange={e => updateMaterial(mat.id,'price',Number(e.target.value))} className="prop-input" placeholder="0,00" />
-                      </div>
-                    </div>
-                    <div className="prop-item-total">Subtotal: <strong>{fmtBRL(mat.qty * mat.price)}</strong></div>
-                  </div>
-                ))}
-                <button className="prop-btn-add prop-btn-add-mat" onClick={addMaterial}>
-                  <i className="fas fa-plus" /> Adicionar material
-                </button>
-                {materials.length > 0 && (
-                  <div className="prop-materials-total">
-                    <span>Total de materiais</span>
-                    <strong>{fmtBRL(materialsTotal)}</strong>
-                  </div>
-                )}
               </div>
             )}
           </section>
@@ -519,14 +511,26 @@ export default function PropostaPage() {
                     <thead><tr><th>#</th><th>Descrição</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
                     <tbody>
                       {items.map((item, idx) => (
-                        <tr key={item.id}>
-                          <td className="center">{idx+1}</td>
-                          <td>{item.desc}</td>
-                          <td className="center">{item.qty}</td>
-                          <td className="center">{item.unit}</td>
-                          <td className="right">{fmtBRL(item.price)}</td>
-                          <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
-                        </tr>
+                        <>
+                          <tr key={item.id}>
+                            <td className="center">{idx+1}</td>
+                            <td>{item.desc}</td>
+                            <td className="center">{item.qty}</td>
+                            <td className="center">{item.unit}</td>
+                            <td className="right">{fmtBRL(item.price)}</td>
+                            <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
+                          </tr>
+                          {materialsIncluded && item.mats.map(mat => (
+                            <tr key={mat.id} className="prop-doc-mat-row">
+                              <td />
+                              <td className="prop-doc-mat-cell"><i className="fas fa-cube" /> {mat.desc}</td>
+                              <td className="center">{mat.qty}</td>
+                              <td className="center">{mat.unit}</td>
+                              <td className="right">{fmtBRL(mat.price)}</td>
+                              <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
+                            </tr>
+                          ))}
+                        </>
                       ))}
                     </tbody>
                   </table>
@@ -534,38 +538,15 @@ export default function PropostaPage() {
                 {!totalOverride && (
                   <div className="prop-doc-totals">
                     {discount > 0 && <>
-                      <div className="prop-doc-total-row"><span>Subtotal</span><span>{fmtBRL(subtotal)}</span></div>
+                      <div className="prop-doc-total-row"><span>Subtotal serviços</span><span>{fmtBRL(subtotal)}</span></div>
                       <div className="prop-doc-total-row discount"><span>Desconto ({discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
                     </>}
-                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcTotal)}</span></div>
+                    {materialsIncluded && materialsTotal > 0 && (
+                      <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(materialsTotal)}</span></div>
+                    )}
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcTotal + (materialsIncluded ? materialsTotal : 0))}</span></div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {materialsIncluded && materials.length > 0 && (
-              <div className="prop-doc-section">
-                <h4 className="prop-doc-section-title">MATERIAIS INCLUSOS</h4>
-                <div className="prop-doc-table-wrap">
-                  <table className="prop-doc-table">
-                    <thead><tr><th>#</th><th>Material</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
-                    <tbody>
-                      {materials.map((mat, idx) => (
-                        <tr key={mat.id}>
-                          <td className="center">{idx+1}</td>
-                          <td>{mat.desc}</td>
-                          <td className="center">{mat.qty}</td>
-                          <td className="center">{mat.unit}</td>
-                          <td className="right">{fmtBRL(mat.price)}</td>
-                          <td className="right bold">{fmtBRL(mat.qty * mat.price)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="prop-doc-totals">
-                  <div className="prop-doc-total-row final"><span>TOTAL MATERIAIS</span><span>{fmtBRL(materialsTotal)}</span></div>
-                </div>
               </div>
             )}
 

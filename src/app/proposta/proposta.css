@@ -465,6 +465,92 @@
 
 .prop-materials-total strong { color: #90cdf4; font-family: var(--font-heading); font-size: 0.95rem; }
 
+/* ── Per-item materials (inline) ────────────────────────────── */
+.prop-item-mats {
+  border-top: 1px dashed rgba(99,179,237,0.2);
+  margin-top: 10px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prop-item-mats-header {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #90cdf4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.prop-mat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prop-mat-num {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #90cdf4;
+  background: rgba(99,179,237,0.1);
+  border: 1px solid rgba(99,179,237,0.25);
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.prop-mat-desc { flex: 1; min-width: 0; font-size: 0.82rem; }
+.prop-mat-qty  { width: 52px; flex-shrink: 0; font-size: 0.82rem; }
+.prop-mat-unit { width: 56px; flex-shrink: 0; font-size: 0.82rem; }
+.prop-mat-price { width: 72px; flex-shrink: 0; font-size: 0.82rem; }
+.prop-mat-remove { flex-shrink: 0; }
+
+.prop-mat-add {
+  background: transparent;
+  border: 1px dashed rgba(99,179,237,0.25);
+  color: #90cdf4;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition-fast);
+  align-self: flex-start;
+}
+
+.prop-mat-add:hover { background: rgba(99,179,237,0.06); border-color: #90cdf4; }
+
+.prop-mat-subtotal {
+  font-size: 0.78rem;
+  color: var(--text-gray);
+  text-align: right;
+}
+
+.prop-mat-subtotal strong { color: #90cdf4; }
+
+/* ── Document: material sub-rows ────────────────────────────── */
+.prop-doc-mat-row { background: rgba(99,179,237,0.03) !important; }
+
+.prop-doc-mat-cell {
+  color: var(--text-gray) !important;
+  font-size: 11.5px !important;
+  padding-left: 24px !important;
+}
+
+.prop-doc-mat-cell i { color: #90cdf4; margin-right: 4px; font-size: 10px; }
+
 /* ── PIX info ────────────────────────────────────────────────── */
 .prop-pix-info {
   display: flex;
