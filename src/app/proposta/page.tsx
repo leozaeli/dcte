@@ -122,11 +122,12 @@ export default function PropostaPage() {
       ? { ...i, mats: i.mats.map(m => m.id === matId ? { ...m, [key]: val } : m) }
       : i)), []);
 
-  const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
-  const discountVal = subtotal * (discount / 100);
-  const calcTotal = subtotal - discountVal;
+  const subtotal      = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const discountVal   = subtotal * (discount / 100);
+  const calcLabor     = subtotal - discountVal;
+  const laborTotal    = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcLabor;
   const materialsTotal = items.reduce((s, i) => s + i.mats.reduce((ms, m) => ms + m.qty * m.price, 0), 0);
-  const displayTotal = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcTotal;
+  const grandTotal    = laborTotal + (materialsIncluded ? materialsTotal : 0);
 
   function handleGenerate() {
     if (!clientName.trim()) { setError('Preencha o nome do cliente para gerar a proposta.'); return; }
@@ -138,7 +139,7 @@ export default function PropostaPage() {
         ...rest,
         mats: materialsIncluded ? mats.map(({ id: _mid, ...m }) => m) : [],
       })),
-      totalOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
+      laborOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
       discount,
       payment, paymentNotes,
       deadline,
@@ -392,28 +393,47 @@ export default function PropostaPage() {
           {/* Valor */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-dollar-sign" /> Valor da Proposta</h3>
-            {items.length > 0 && (
-              <div className="prop-total-calculated">
-                <span>Total calculado pelos itens</span>
-                <strong>{fmtBRL(calcTotal)}</strong>
+
+            <div className="prop-value-breakdown">
+              {/* Mão de obra */}
+              <div className="prop-value-row">
+                <div className="prop-value-label">
+                  <i className="fas fa-hard-hat" />
+                  <span>Mão de obra</span>
+                </div>
+                <div className="prop-value-right">
+                  {items.length > 0 && !totalOverride && (
+                    <span className="prop-value-calc">{fmtBRL(calcLabor)}</span>
+                  )}
+                  <input
+                    type="text"
+                    value={totalOverride}
+                    onChange={e => setTotalOverride(e.target.value)}
+                    className="prop-input prop-value-input"
+                    placeholder={items.length > 0 ? fmtBRL(calcLabor) : 'R$ 0,00'}
+                  />
+                </div>
               </div>
-            )}
-            <div className="prop-field">
-              <label>Valor total manual (R$){items.length > 0 ? ' — substitui o calculado' : ''}</label>
-              <input
-                type="text"
-                value={totalOverride}
-                onChange={e => setTotalOverride(e.target.value)}
-                className="prop-input prop-total-input"
-                placeholder={items.length > 0 ? `Deixe vazio para usar ${fmtBRL(calcTotal)}` : 'Ex: 850,00'}
-              />
+
+              {/* Materiais */}
+              {materialsIncluded && (
+                <div className="prop-value-row prop-value-row-mat">
+                  <div className="prop-value-label">
+                    <i className="fas fa-boxes" />
+                    <span>Materiais</span>
+                  </div>
+                  <span className="prop-value-calc prop-value-calc-mat">{fmtBRL(materialsTotal)}</span>
+                </div>
+              )}
+
+              {/* Total */}
+              {grandTotal > 0 && (
+                <div className="prop-value-total">
+                  <span>TOTAL GERAL</span>
+                  <span className="prop-total-value">{fmtBRL(grandTotal)}</span>
+                </div>
+              )}
             </div>
-            {displayTotal > 0 && (
-              <div className="prop-total-display">
-                <span>VALOR FINAL DA PROPOSTA</span>
-                <span className="prop-total-value">{fmtBRL(displayTotal)}</span>
-              </div>
-            )}
           </section>
 
           {/* Pagamento */}
@@ -544,18 +564,30 @@ export default function PropostaPage() {
                     {materialsIncluded && materialsTotal > 0 && (
                       <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(materialsTotal)}</span></div>
                     )}
-                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcTotal + (materialsIncluded ? materialsTotal : 0))}</span></div>
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(grandTotal)}</span></div>
                   </div>
                 )}
               </div>
             )}
 
-            {displayTotal > 0 && (
+            {grandTotal > 0 && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">VALOR DA PROPOSTA</h4>
-                <div className="prop-doc-total-hero">
-                  <span>Valor Total</span>
-                  <span className="prop-doc-total-hero-value">{fmtBRL(displayTotal)}</span>
+                <div className="prop-doc-value-breakdown">
+                  <div className="prop-doc-value-row">
+                    <span>Mão de obra</span>
+                    <span>{fmtBRL(laborTotal)}</span>
+                  </div>
+                  {materialsIncluded && materialsTotal > 0 && (
+                    <div className="prop-doc-value-row">
+                      <span>Materiais</span>
+                      <span>{fmtBRL(materialsTotal)}</span>
+                    </div>
+                  )}
+                  <div className="prop-doc-value-row prop-doc-value-total">
+                    <span>TOTAL GERAL</span>
+                    <span className="prop-doc-total-hero-value">{fmtBRL(grandTotal)}</span>
+                  </div>
                 </div>
               </div>
             )}

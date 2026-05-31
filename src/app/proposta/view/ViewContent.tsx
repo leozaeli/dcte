@@ -23,7 +23,7 @@ type Proposal = {
   number: string; date: string; validity: number;
   clientName: string; clientDoc: string; clientAddr: string; clientPhone: string; clientEmail: string;
   items: Item[];
-  totalOverride: number | null;
+  laborOverride: number | null;
   discount: number;
   payment: string; paymentNotes: string;
   deadline: string;
@@ -63,10 +63,14 @@ export default function ViewContent() {
     );
   }
 
-  const subtotal = proposal.items.reduce((s, i) => s + i.qty * i.price, 0);
+  const subtotal    = proposal.items.reduce((s, i) => s + i.qty * i.price, 0);
   const discountVal = subtotal * (proposal.discount / 100);
-  const calcTotal = subtotal - discountVal;
-  const displayTotal = proposal.totalOverride ?? calcTotal;
+  const calcLabor   = subtotal - discountVal;
+  const laborTotal  = proposal.laborOverride ?? calcLabor;
+  const matsTotal   = proposal.materialsIncluded
+    ? proposal.items.reduce((s, i) => s + (i.mats||[]).reduce((ms, m) => ms + m.qty * m.price, 0), 0)
+    : 0;
+  const grandTotal  = laborTotal + matsTotal;
 
   function buildAcceptMsg() {
     const servicesList = proposal!.items.length > 0
@@ -77,7 +81,7 @@ export default function ViewContent() {
       `Proposta: ${proposal!.number}\n` +
       `Cliente: ${proposal!.clientName}\n` +
       (proposal!.clientAddr ? `Local: ${proposal!.clientAddr}\n` : '') +
-      `Valor: ${fmtBRL(displayTotal)}\n` +
+      `Valor: ${fmtBRL(grandTotal)}\n` +
       (servicesList ? `\n*Serviços contratados:*\n${proposal!.items.map(i => `• ${i.desc} (${i.qty} ${i.unit})`).join('\n')}\n` : '') +
       `\n✅ *Aceito os termos desta proposta e confirmo a contratação dos serviços acima.*`
     );
@@ -88,7 +92,7 @@ export default function ViewContent() {
       `❌ *RECUSA DE PROPOSTA — DCTE*\n\n` +
       `Proposta: ${proposal!.number}\n` +
       `Cliente: ${proposal!.clientName}\n` +
-      `Valor: ${fmtBRL(displayTotal)}\n\n` +
+      `Valor: ${fmtBRL(grandTotal)}\n\n` +
       `*Motivo da recusa:*\n${reason}`
     );
   }
@@ -170,7 +174,7 @@ export default function ViewContent() {
                   </tbody>
                 </table>
               </div>
-              {!proposal.totalOverride && (() => {
+              {!proposal.laborOverride && (() => {
                 const matsTotal = proposal.materialsIncluded
                   ? proposal.items.reduce((s, i) => s + (i.mats||[]).reduce((ms,m) => ms + m.qty * m.price, 0), 0)
                   : 0;
@@ -181,20 +185,31 @@ export default function ViewContent() {
                       <div className="prop-doc-total-row discount"><span>Desconto ({proposal.discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
                     </>}
                     {matsTotal > 0 && <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(matsTotal)}</span></div>}
-                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcTotal + matsTotal)}</span></div>
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(grandTotal)}</span></div>
                   </div>
                 );
               })()}
             </div>
           )}
 
-          {/* Total hero */}
-          {displayTotal > 0 && (
+          {grandTotal > 0 && (
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">VALOR DA PROPOSTA</h4>
-              <div className="prop-doc-total-hero">
-                <span>Valor Total</span>
-                <span className="prop-doc-total-hero-value">{fmtBRL(displayTotal)}</span>
+              <div className="prop-doc-value-breakdown">
+                <div className="prop-doc-value-row">
+                  <span>Mão de obra</span>
+                  <span>{fmtBRL(laborTotal)}</span>
+                </div>
+                {proposal.materialsIncluded && matsTotal > 0 && (
+                  <div className="prop-doc-value-row">
+                    <span>Materiais</span>
+                    <span>{fmtBRL(matsTotal)}</span>
+                  </div>
+                )}
+                <div className="prop-doc-value-row prop-doc-value-total">
+                  <span>TOTAL GERAL</span>
+                  <span className="prop-doc-total-hero-value">{fmtBRL(grandTotal)}</span>
+                </div>
               </div>
             </div>
           )}

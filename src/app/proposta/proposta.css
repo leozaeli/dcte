@@ -551,6 +551,99 @@
 
 .prop-doc-mat-cell i { color: #90cdf4; margin-right: 4px; font-size: 10px; }
 
+/* ── Valor breakdown (form) ─────────────────────────────────── */
+.prop-value-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prop-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.prop-value-row-mat {
+  background: rgba(99,179,237,0.04);
+  border-color: rgba(99,179,237,0.1);
+}
+
+.prop-value-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-gray);
+  white-space: nowrap;
+}
+
+.prop-value-label i { color: var(--primary-gold); }
+.prop-value-row-mat .prop-value-label i { color: #90cdf4; }
+
+.prop-value-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prop-value-calc {
+  font-size: 0.78rem;
+  color: var(--text-gray);
+  white-space: nowrap;
+}
+
+.prop-value-calc-mat { color: #90cdf4; }
+
+.prop-value-input {
+  width: 130px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.prop-value-total {
+  background: rgba(245,158,11,0.06);
+  border-color: rgba(245,158,11,0.2);
+  padding: 12px 14px;
+}
+
+/* ── Valor breakdown (document) ─────────────────────────────── */
+.prop-doc-value-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(245,158,11,0.12);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.prop-doc-value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-gray);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.prop-doc-value-row:last-child { border-bottom: none; }
+
+.prop-doc-value-total {
+  background: rgba(245,158,11,0.06);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text-white);
+}
+
 /* ── PIX info ────────────────────────────────────────────────── */
 .prop-pix-info {
   display: flex;
