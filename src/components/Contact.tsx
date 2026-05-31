@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ScrollReveal from "./ScrollReveal";
 
-const WHATSAPP = "5511999999999";
+const WHATSAPP = "5571999142157";
 
 export default function Contact() {
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,7 @@ export default function Contact() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                (00) 90000-0000
+                (71) 99914-2157
               </a>
             </div>
           </div>
