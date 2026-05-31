@@ -4,25 +4,6 @@ import { useState, useEffect } from 'react';
 import Logo from '@/components/Logo';
 import '../proposta.css';
 
-// ─── Decode ───────────────────────────────────────────────────────────────────
-async function decodeProposal<T>(str: string): Promise<T> {
-  const isCompressed = str.startsWith('z.');
-  const b64 = (isCompressed ? str.slice(2) : str).replace(/-/g, '+').replace(/_/g, '/');
-  const padding = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
-  const chars = atob(b64 + padding);
-  const bytes = new Uint8Array(chars.split('').map(c => c.charCodeAt(0)));
-  if (isCompressed) {
-    const stream = new DecompressionStream('gzip');
-    const writer = stream.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    const json = await new Response(stream.readable).text();
-    return JSON.parse(json);
-  }
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Mat  = { desc: string; qty: number; unit: string; price: number };
 type Item = { desc: string; qty: number; unit: string; price: number; mats: Mat[] };
 
@@ -49,25 +30,24 @@ function addDays(d: string, n: number) {
 function fmtDate(d: string) { return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR'); }
 function fmtBRL(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 
-export default function SlugView() {
+export default function SlugView({ slug }: { slug: string }) {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (!hash) { setLoading(false); return; }
-    decodeProposal<Proposal>(hash)
-      .then(setProposal)
-      .catch(() => {/* invalid */})
+    fetch(`/api/proposta?slug=${encodeURIComponent(slug)}`)
+      .then(r => r.json())
+      .then(({ data }) => { if (data) setProposal(data); })
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [slug]);
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#090a0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', fontFamily: 'Outfit, sans-serif' }}>
-        Carregando proposta...
+      <div style={{ minHeight: '100vh', background: '#090a0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', fontFamily: 'Outfit, sans-serif', gap: '12px' }}>
+        <i className="fas fa-spinner fa-spin" /> Carregando proposta...
       </div>
     );
   }
@@ -164,10 +144,7 @@ export default function SlugView() {
                         {proposal.materialsIncluded && item.mats?.length > 0 && (
                           <>
                             <tr className="prop-doc-mat-header-row">
-                              <td />
-                              <td colSpan={5} className="prop-doc-mat-header-cell">
-                                <i className="fas fa-boxes" /> Materiais
-                              </td>
+                              <td /><td colSpan={5} className="prop-doc-mat-header-cell"><i className="fas fa-boxes" /> Materiais</td>
                             </tr>
                             {item.mats.map((mat, midx) => (
                               <tr key={`m${midx}`} className="prop-doc-mat-row">
@@ -187,14 +164,17 @@ export default function SlugView() {
                 </table>
               </div>
               {!proposal.laborOverride && (() => {
+                const mt = proposal.materialsIncluded
+                  ? proposal.items.reduce((s, i) => s + (i.mats || []).reduce((ms, m) => ms + m.qty * m.price, 0), 0)
+                  : 0;
                 return (
                   <div className="prop-doc-totals">
                     {proposal.discount > 0 && <>
                       <div className="prop-doc-total-row"><span>Subtotal serviços</span><span>{fmtBRL(subtotal)}</span></div>
                       <div className="prop-doc-total-row discount"><span>Desconto ({proposal.discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
                     </>}
-                    {matsTotal > 0 && <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(matsTotal)}</span></div>}
-                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(grandTotal)}</span></div>
+                    {mt > 0 && <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(mt)}</span></div>}
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcLabor - discountVal + mt)}</span></div>
                   </div>
                 );
               })()}

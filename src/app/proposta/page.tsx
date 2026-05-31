@@ -109,6 +109,7 @@ export default function PropostaPage() {
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   // Services suggestions — filtered only when typing
   const filteredSuggestions = useMemo(() => {
@@ -156,6 +157,7 @@ export default function PropostaPage() {
   async function handleGenerate() {
     if (!clientName.trim()) { setError('Preencha o nome do cliente para gerar a proposta.'); return; }
     setError('');
+    setGenerating(true);
     const data = {
       number, date, validity,
       clientName, clientDoc, clientAddr, clientPhone, clientEmail,
@@ -170,10 +172,21 @@ export default function PropostaPage() {
       materialsIncluded,
       observations,
     };
-    const encoded = await encodeProposal(data);
     const slug = buildSlug(number, clientName);
-    const url = `${window.location.origin}/proposta/${slug}#${encoded}`;
-    setGeneratedUrl(url);
+    try {
+      const res = await fetch('/api/proposta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, data }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar');
+      const url = `${window.location.origin}/proposta/${slug}`;
+      setGeneratedUrl(url);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao gerar proposta. Verifique as configurações do Blob.');
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function handleCopy() {
@@ -669,8 +682,10 @@ export default function PropostaPage() {
         <div className="proposta-generate-bar no-print">
           {error && <p className="prop-error"><i className="fas fa-exclamation-circle" /> {error}</p>}
 
-          <button className="prop-btn-generate" onClick={handleGenerate}>
-            <i className="fas fa-paper-plane" /> Gerar Proposta
+          <button className="prop-btn-generate" onClick={handleGenerate} disabled={generating}>
+            {generating
+              ? <><i className="fas fa-spinner fa-spin" /> Salvando...</>
+              : <><i className="fas fa-paper-plane" /> Gerar Proposta</>}
           </button>
 
           {generatedUrl && (
