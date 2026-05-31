@@ -51,11 +51,22 @@ function addDays(d: string, n: number) {
 function fmtDate(d: string) { return new Date(d+'T12:00:00').toLocaleDateString('pt-BR'); }
 function fmtBRL(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 
-function encodeProposal(data: unknown): string {
+async function encodeProposal(data: unknown): Promise<string> {
   const json = JSON.stringify(data);
-  const bytes = new TextEncoder().encode(json);
-  const chars = Array.from(bytes, b => String.fromCharCode(b));
-  return btoa(chars.join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  try {
+    const stream = new CompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    writer.write(new TextEncoder().encode(json));
+    writer.close();
+    const buf = await new Response(stream.readable).arrayBuffer();
+    const chars = Array.from(new Uint8Array(buf), b => String.fromCharCode(b));
+    return 'z.' + btoa(chars.join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  } catch {
+    // fallback sem compressão
+    const bytes = new TextEncoder().encode(json);
+    const chars = Array.from(bytes, b => String.fromCharCode(b));
+    return btoa(chars.join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  }
 }
 
 function getInitials(name: string): string {
@@ -142,7 +153,7 @@ export default function PropostaPage() {
   const materialsTotal = items.reduce((s, i) => s + i.mats.reduce((ms, m) => ms + m.qty * m.price, 0), 0);
   const grandTotal     = laborTotal + (materialsIncluded ? materialsTotal : 0);
 
-  function handleGenerate() {
+  async function handleGenerate() {
     if (!clientName.trim()) { setError('Preencha o nome do cliente para gerar a proposta.'); return; }
     setError('');
     const data = {
@@ -159,7 +170,7 @@ export default function PropostaPage() {
       materialsIncluded,
       observations,
     };
-    const encoded = encodeProposal(data);
+    const encoded = await encodeProposal(data);
     const slug = buildSlug(number, clientName);
     const url = `${window.location.origin}/proposta/${slug}#${encoded}`;
     setGeneratedUrl(url);
@@ -519,31 +530,6 @@ export default function PropostaPage() {
             </div>
           </section>
 
-          {error && <p className="prop-error"><i className="fas fa-exclamation-circle" /> {error}</p>}
-
-          <button className="prop-btn-generate" onClick={handleGenerate}>
-            <i className="fas fa-paper-plane" /> Gerar Proposta
-          </button>
-
-          {generatedUrl && (
-            <div className="prop-generated-box">
-              <div className="prop-generated-header">
-                <i className="fas fa-check-circle" />
-                <span>Proposta gerada com sucesso!</span>
-              </div>
-              <p className="prop-generated-subtitle">Copie o link abaixo e envie ao cliente:</p>
-              <div className="prop-generated-url">
-                <span>{generatedUrl}</span>
-                <button onClick={handleCopy} className={`prop-copy-btn ${copied?'copied':''}`}>
-                  <i className={`fas fa-${copied?'check':'copy'}`} />
-                  {copied ? 'Copiado!' : 'Copiar'}
-                </button>
-              </div>
-              <button className="prop-btn-whatsapp" onClick={handleSendWhatsApp}>
-                <i className="fab fa-whatsapp" /> Enviar link via WhatsApp
-              </button>
-            </div>
-          )}
         </aside>
 
         {/* ═══ PREVIEW ════════════════════════════════════════════════ */}
@@ -678,6 +664,35 @@ export default function PropostaPage() {
             </div>
           </div>
         </main>
+
+        {/* ═══ GENERATE BAR — abaixo do preview no mobile ════════════ */}
+        <div className="proposta-generate-bar no-print">
+          {error && <p className="prop-error"><i className="fas fa-exclamation-circle" /> {error}</p>}
+
+          <button className="prop-btn-generate" onClick={handleGenerate}>
+            <i className="fas fa-paper-plane" /> Gerar Proposta
+          </button>
+
+          {generatedUrl && (
+            <div className="prop-generated-box">
+              <div className="prop-generated-header">
+                <i className="fas fa-check-circle" />
+                <span>Proposta gerada com sucesso!</span>
+              </div>
+              <p className="prop-generated-subtitle">Copie o link abaixo e envie ao cliente:</p>
+              <div className="prop-generated-url">
+                <span>{generatedUrl}</span>
+                <button onClick={handleCopy} className={`prop-copy-btn ${copied?'copied':''}`}>
+                  <i className={`fas fa-${copied?'check':'copy'}`} />
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+              <button className="prop-btn-whatsapp" onClick={handleSendWhatsApp}>
+                <i className="fab fa-whatsapp" /> Enviar link via WhatsApp
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

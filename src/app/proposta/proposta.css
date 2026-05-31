@@ -90,8 +90,23 @@
 .proposta-layout {
   display: grid;
   grid-template-columns: 500px 1fr;
+  grid-template-rows: 1fr auto;
   flex: 1;
   min-height: 0;
+}
+
+.proposta-form    { grid-column: 1; grid-row: 1; }
+.proposta-preview { grid-column: 2; grid-row: 1 / 3; }
+.proposta-generate-bar {
+  grid-column: 1;
+  grid-row: 2;
+  border-right: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(9,10,12,0.6);
 }
 
 /* ── Form panel ──────────────────────────────────────────────── */
@@ -1451,7 +1466,13 @@
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .proposta-root, .view-root { overflow-x: hidden; max-width: 100vw; }
-  .proposta-layout { grid-template-columns: 1fr; }
+  .proposta-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .proposta-form    { grid-column: 1; grid-row: 1; }
+  .proposta-preview { grid-column: 1; grid-row: 2; }
+  .proposta-generate-bar { grid-column: 1; grid-row: 3; border-right: none; border-top: 1px solid var(--border-color); }
   .proposta-form { border-right: none; border-bottom: 1px solid var(--border-color); }
   .proposta-preview { padding: 24px 16px; }
   .prop-doc { padding: 24px 16px; }

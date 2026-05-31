@@ -5,11 +5,20 @@ import Logo from '@/components/Logo';
 import '../proposta.css';
 
 // ─── Decode ───────────────────────────────────────────────────────────────────
-function decodeProposal<T>(str: string): T {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4));
-  const chars = atob(base64 + padding);
+async function decodeProposal<T>(str: string): Promise<T> {
+  const isCompressed = str.startsWith('z.');
+  const b64 = (isCompressed ? str.slice(2) : str).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
+  const chars = atob(b64 + padding);
   const bytes = new Uint8Array(chars.split('').map(c => c.charCodeAt(0)));
+  if (isCompressed) {
+    const stream = new DecompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const json = await new Response(stream.readable).text();
+    return JSON.parse(json);
+  }
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
@@ -47,11 +56,12 @@ export default function SlugView() {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    try {
-      const hash = window.location.hash.slice(1);
-      if (hash) setProposal(decodeProposal<Proposal>(hash));
-    } catch { /* invalid data */ }
-    setLoading(false);
+    const hash = window.location.hash.slice(1);
+    if (!hash) { setLoading(false); return; }
+    decodeProposal<Proposal>(hash)
+      .then(setProposal)
+      .catch(() => {/* invalid */})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
