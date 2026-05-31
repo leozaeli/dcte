@@ -275,9 +275,9 @@ export default function PropostaPage() {
                             className={`prop-suggestion-parent ${isOpen ? 'open' : ''}`}
                             onMouseDown={e => { e.preventDefault(); setExpandedCategory(isOpen ? null : cat); }}
                           >
+                            <i className={`fas fa-${isOpen ? 'minus-square' : 'plus-square'} prop-suggestion-toggle-icon`} />
                             <span>{cat}</span>
                             <span className="prop-suggestion-count">{services.length}</span>
-                            <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} prop-suggestion-arrow`} />
                           </button>
                           {isOpen && (
                             <ul className="prop-suggestion-children">
@@ -332,65 +332,12 @@ export default function PropostaPage() {
                 <input type="number" min="0" max="100" value={discount} onChange={e => setDiscount(Number(e.target.value))} className="prop-input" style={{maxWidth:'100px'}} />
               </div>
             )}
-          </section>
 
-          {/* Valor */}
-          <section className="prop-section">
-            <h3 className="prop-section-title"><i className="fas fa-dollar-sign" /> Valor da Proposta</h3>
-            {items.length > 0 && (
-              <div className="prop-total-calculated">
-                <span>Total calculado pelos itens</span>
-                <strong>{fmtBRL(calcTotal)}</strong>
-              </div>
-            )}
-            <div className="prop-field">
-              <label>Valor total manual (R$){items.length > 0 ? ' — substitui o calculado' : ''}</label>
-              <input
-                type="text"
-                value={totalOverride}
-                onChange={e => setTotalOverride(e.target.value)}
-                className="prop-input prop-total-input"
-                placeholder={items.length > 0 ? `Deixe vazio para usar ${fmtBRL(calcTotal)}` : 'Ex: 850,00'}
-              />
-            </div>
-            {displayTotal > 0 && (
-              <div className="prop-total-display">
-                <span>VALOR FINAL DA PROPOSTA</span>
-                <span className="prop-total-value">{fmtBRL(displayTotal)}</span>
-              </div>
-            )}
-          </section>
-
-          {/* Pagamento */}
-          <section className="prop-section">
-            <h3 className="prop-section-title"><i className="fas fa-money-bill-wave" /> Pagamento</h3>
-            <div className="prop-pix-info">
-              <i className="fas fa-qrcode" />
-              <span>Chave PIX: <strong>{CNPJ}</strong> (CNPJ)</span>
-            </div>
-            <div className="prop-field">
-              <label>Condição de pagamento</label>
-              <div className="prop-chips prop-chips-wrap">
-                {PAYMENT_OPTIONS.map(opt => (
-                  <button key={opt} className={`prop-chip ${payment===opt?'active':''}`} onClick={() => setPayment(opt)}>{opt}</button>
-                ))}
-              </div>
-            </div>
-            <div className="prop-field">
-              <label>Observações de pagamento</label>
-              <input value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} className="prop-input" placeholder="Informações adicionais sobre pagamento..." />
-            </div>
-          </section>
-
-          {/* Execução e Materiais */}
-          <section className="prop-section">
-            <h3 className="prop-section-title"><i className="fas fa-calendar-check" /> Execução</h3>
-            <div className="prop-field">
-              <label>Prazo estimado de execução</label>
-              <input value={deadline} onChange={e => setDeadline(e.target.value)} className="prop-input" placeholder="Ex: 2 dias úteis após aprovação" />
+            {/* ── Materiais ──────────────────────────────────── */}
+            <div className="prop-section-divider">
+              <i className="fas fa-boxes" /> Materiais
             </div>
 
-            {/* Materials toggle */}
             <div className="prop-toggle-row">
               <div className="prop-toggle-info">
                 <span className="prop-toggle-label">Materiais inclusos</span>
@@ -448,8 +395,64 @@ export default function PropostaPage() {
                 )}
               </div>
             )}
+          </section>
 
-            <div className="prop-field" style={{marginTop:'8px'}}>
+          {/* Valor */}
+          <section className="prop-section">
+            <h3 className="prop-section-title"><i className="fas fa-dollar-sign" /> Valor da Proposta</h3>
+            {items.length > 0 && (
+              <div className="prop-total-calculated">
+                <span>Total calculado pelos itens</span>
+                <strong>{fmtBRL(calcTotal)}</strong>
+              </div>
+            )}
+            <div className="prop-field">
+              <label>Valor total manual (R$){items.length > 0 ? ' — substitui o calculado' : ''}</label>
+              <input
+                type="text"
+                value={totalOverride}
+                onChange={e => setTotalOverride(e.target.value)}
+                className="prop-input prop-total-input"
+                placeholder={items.length > 0 ? `Deixe vazio para usar ${fmtBRL(calcTotal)}` : 'Ex: 850,00'}
+              />
+            </div>
+            {displayTotal > 0 && (
+              <div className="prop-total-display">
+                <span>VALOR FINAL DA PROPOSTA</span>
+                <span className="prop-total-value">{fmtBRL(displayTotal)}</span>
+              </div>
+            )}
+          </section>
+
+          {/* Pagamento */}
+          <section className="prop-section">
+            <h3 className="prop-section-title"><i className="fas fa-money-bill-wave" /> Pagamento</h3>
+            <div className="prop-pix-info">
+              <i className="fas fa-qrcode" />
+              <span>Chave PIX: <strong>{CNPJ}</strong> (CNPJ)</span>
+            </div>
+            <div className="prop-field">
+              <label>Condição de pagamento</label>
+              <div className="prop-chips prop-chips-wrap">
+                {PAYMENT_OPTIONS.map(opt => (
+                  <button key={opt} className={`prop-chip ${payment===opt?'active':''}`} onClick={() => setPayment(opt)}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div className="prop-field">
+              <label>Observações de pagamento</label>
+              <input value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} className="prop-input" placeholder="Informações adicionais sobre pagamento..." />
+            </div>
+          </section>
+
+          {/* Execução */}
+          <section className="prop-section">
+            <h3 className="prop-section-title"><i className="fas fa-calendar-check" /> Execução</h3>
+            <div className="prop-field">
+              <label>Prazo estimado de execução</label>
+              <input value={deadline} onChange={e => setDeadline(e.target.value)} className="prop-input" placeholder="Ex: 2 dias úteis após aprovação" />
+            </div>
+            <div className="prop-field">
               <label>Observações técnicas</label>
               <textarea value={observations} onChange={e => setObservations(e.target.value)} className="prop-input prop-textarea" placeholder="Condições do serviço, exclusões, acessos necessários..." />
             </div>

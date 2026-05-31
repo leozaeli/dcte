@@ -270,6 +270,13 @@
 .prop-suggestion-parent:hover,
 .prop-suggestion-parent.open { background: rgba(245, 158, 11, 0.09); color: var(--primary-gold); }
 
+.prop-suggestion-toggle-icon {
+  font-size: 0.95rem;
+  color: var(--primary-gold);
+  flex-shrink: 0;
+  width: 16px;
+}
+
 .prop-suggestion-parent > span:first-child { flex: 1; }
 
 .prop-suggestion-count {
@@ -361,6 +368,23 @@
   margin-top: 4px;
 }
 .prop-btn-add-mat:hover { border-color: #90cdf4; background: rgba(99,179,237,0.05); color: #bee3f8; }
+
+/* ── Section internal divider ───────────────────────────────── */
+.prop-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-gray);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+}
+
+.prop-section-divider i { color: var(--primary-gold); }
 
 /* ── Materials toggle ───────────────────────────────────────── */
 .prop-toggle-row {
