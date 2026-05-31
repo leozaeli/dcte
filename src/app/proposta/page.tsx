@@ -22,9 +22,9 @@ const CATALOGUE: Record<string, string[]> = {
   'Inspeções e Laudos': ['Inspeção elétrica residencial','Inspeção elétrica comercial','Inspeção elétrica industrial','Termografia elétrica','Medição de tensão e corrente','Medição de consumo','Relatório técnico','Laudo técnico elétrico'],
   'Outros': ['Visita técnica','Consultoria elétrica','Acompanhamento técnico de obra','Levantamento de cargas','Projeto elétrico básico','Projeto de carregamento para veículos elétricos','Regularização de instalações elétricas','Atendimento emergencial 24 horas'],
 };
-const ALL_SERVICES = Object.values(CATALOGUE).flat();
 
 const WHATSAPP = '5571999142157';
+const CNPJ = '65.714.300/0001-88';
 
 const PAYMENT_OPTIONS = [
   'À vista (PIX / Transferência)',
@@ -35,7 +35,6 @@ const PAYMENT_OPTIONS = [
   'A combinar',
 ];
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Item = { id: string; desc: string; qty: number; unit: string; price: number };
 
 function genId() { return Math.random().toString(36).slice(2, 8); }
@@ -79,13 +78,17 @@ export default function PropostaPage() {
   const [payment, setPayment] = useState(PAYMENT_OPTIONS[0]);
   const [paymentNotes, setPaymentNotes] = useState('');
   const [deadline, setDeadline] = useState('');
-  const [materialIncluded, setMaterialIncluded] = useState(false);
-  const [observations, setObservations] = useState('');
 
+  // Materials
+  const [materialsIncluded, setMaterialsIncluded] = useState(false);
+  const [materials, setMaterials] = useState<Item[]>([]);
+
+  const [observations, setObservations] = useState('');
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
+  // Services suggestions
   const categorizedSuggestions = useMemo(() => {
     const term = search.toLowerCase();
     return Object.entries(CATALOGUE).reduce<{ category: string; services: string[] }[]>((acc, [cat, services]) => {
@@ -97,6 +100,7 @@ export default function PropostaPage() {
     }, []);
   }, [search]);
 
+  // Services
   const addItem = useCallback((desc: string) => {
     setItems(prev => [...prev, { id: genId(), desc, qty: 1, unit: 'un', price: 0 }]);
     setSearch(''); setShowSuggestions(false);
@@ -105,9 +109,17 @@ export default function PropostaPage() {
   const updateItem = useCallback(<K extends keyof Item>(id: string, key: K, val: Item[K]) =>
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i)), []);
 
+  // Materials
+  const addMaterial = useCallback(() =>
+    setMaterials(prev => [...prev, { id: genId(), desc: '', qty: 1, unit: 'un', price: 0 }]), []);
+  const removeMaterial = useCallback((id: string) => setMaterials(prev => prev.filter(m => m.id !== id)), []);
+  const updateMaterial = useCallback(<K extends keyof Item>(id: string, key: K, val: Item[K]) =>
+    setMaterials(prev => prev.map(m => m.id === id ? { ...m, [key]: val } : m)), []);
+
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const discountVal = subtotal * (discount / 100);
   const calcTotal = subtotal - discountVal;
+  const materialsTotal = materials.reduce((s, m) => s + m.qty * m.price, 0);
   const displayTotal = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcTotal;
 
   function handleGenerate() {
@@ -120,7 +132,10 @@ export default function PropostaPage() {
       totalOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
       discount,
       payment, paymentNotes,
-      deadline, materialIncluded, observations,
+      deadline,
+      materialsIncluded,
+      materials: materialsIncluded ? materials.map(({ id: _id, ...rest }) => rest) : [],
+      observations,
     };
     const encoded = encodeProposal(data);
     const url = `${window.location.origin}/proposta/view?p=${encoded}`;
@@ -142,16 +157,16 @@ export default function PropostaPage() {
 
   function handleClear() {
     if (!confirm('Limpar toda a proposta?')) return;
-    setItems([]); setClientName(''); setClientDoc(''); setClientAddr('');
+    setItems([]); setMaterials([]); setMaterialsIncluded(false);
+    setClientName(''); setClientDoc(''); setClientAddr('');
     setClientPhone(''); setClientEmail(''); setObservations('');
     setDiscount(0); setDeadline(''); setPayment(PAYMENT_OPTIONS[0]);
-    setPaymentNotes(''); setMaterialIncluded(false); setTotalOverride('');
+    setPaymentNotes(''); setTotalOverride('');
     setGeneratedUrl(''); setError('');
   }
 
   return (
     <div className="proposta-root">
-      {/* Topbar */}
       <div className="proposta-topbar no-print">
         <div className="proposta-topbar-logo">
           <Logo height={36} />
@@ -166,9 +181,10 @@ export default function PropostaPage() {
       </div>
 
       <div className="proposta-layout">
-        {/* ═══ LEFT – FORM ═══════════════════════════════════════════ */}
+        {/* ═══ FORM ═══════════════════════════════════════════════════ */}
         <aside className="proposta-form no-print">
 
+          {/* Dados da proposta */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-file-alt" /> Dados da Proposta</h3>
             <div className="prop-row">
@@ -184,13 +200,14 @@ export default function PropostaPage() {
             <div className="prop-field">
               <label>Validade</label>
               <div className="prop-chips">
-                {[7, 15, 30].map(v => (
+                {[7,15,30].map(v => (
                   <button key={v} className={`prop-chip ${validity===v?'active':''}`} onClick={() => setValidity(v)}>{v} dias</button>
                 ))}
               </div>
             </div>
           </section>
 
+          {/* Cliente */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-user" /> Dados do Cliente</h3>
             <div className="prop-field">
@@ -217,6 +234,7 @@ export default function PropostaPage() {
             </div>
           </section>
 
+          {/* Serviços */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-bolt" /> Serviços</h3>
             <div className="prop-search-wrap">
@@ -228,7 +246,7 @@ export default function PropostaPage() {
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   className="prop-input prop-search-input"
-                  placeholder="Buscar serviço..."
+                  placeholder="Clique para ver todos os serviços ou digite para filtrar..."
                 />
               </div>
               {showSuggestions && categorizedSuggestions.length > 0 && (
@@ -287,7 +305,7 @@ export default function PropostaPage() {
             )}
           </section>
 
-          {/* ─── Valor da Proposta ─────────────────────────────── */}
+          {/* Valor */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-dollar-sign" /> Valor da Proposta</h3>
             {items.length > 0 && (
@@ -297,7 +315,7 @@ export default function PropostaPage() {
               </div>
             )}
             <div className="prop-field">
-              <label>Valor total manual (R$) {items.length > 0 && '— substitui o calculado'}</label>
+              <label>Valor total manual (R$){items.length > 0 ? ' — substitui o calculado' : ''}</label>
               <input
                 type="text"
                 value={totalOverride}
@@ -314,8 +332,13 @@ export default function PropostaPage() {
             )}
           </section>
 
+          {/* Pagamento */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-money-bill-wave" /> Pagamento</h3>
+            <div className="prop-pix-info">
+              <i className="fas fa-qrcode" />
+              <span>Chave PIX: <strong>{CNPJ}</strong> (CNPJ)</span>
+            </div>
             <div className="prop-field">
               <label>Condição de pagamento</label>
               <div className="prop-chips prop-chips-wrap">
@@ -326,35 +349,89 @@ export default function PropostaPage() {
             </div>
             <div className="prop-field">
               <label>Observações de pagamento</label>
-              <input value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} className="prop-input" placeholder="Ex: chave PIX 71 99914-2157" />
+              <input value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} className="prop-input" placeholder="Informações adicionais sobre pagamento..." />
             </div>
           </section>
 
+          {/* Execução e Materiais */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-calendar-check" /> Execução</h3>
             <div className="prop-field">
               <label>Prazo estimado de execução</label>
               <input value={deadline} onChange={e => setDeadline(e.target.value)} className="prop-input" placeholder="Ex: 2 dias úteis após aprovação" />
             </div>
-            <div className="prop-field prop-checkbox-field">
-              <input type="checkbox" id="material" checked={materialIncluded} onChange={e => setMaterialIncluded(e.target.checked)} />
-              <label htmlFor="material">Materiais inclusos no valor</label>
+
+            {/* Materials toggle */}
+            <div className="prop-toggle-row">
+              <div className="prop-toggle-info">
+                <span className="prop-toggle-label">Materiais inclusos</span>
+                <span className="prop-toggle-sub">
+                  {materialsIncluded ? `${materials.length} item(s) · ${fmtBRL(materialsTotal)}` : 'Não incluso nesta proposta'}
+                </span>
+              </div>
+              <button
+                className={`prop-toggle ${materialsIncluded ? 'active' : ''}`}
+                onClick={() => setMaterialsIncluded(v => !v)}
+                aria-label="Alternar materiais inclusos"
+              />
             </div>
-            <div className="prop-field">
+
+            {materialsIncluded && (
+              <div className="prop-materials-list">
+                {materials.length === 0 && <p className="prop-empty">Nenhum material adicionado.</p>}
+                {materials.map((mat, idx) => (
+                  <div className="prop-item prop-item-material" key={mat.id}>
+                    <div className="prop-item-header">
+                      <span className="prop-item-num prop-item-num-mat">{idx+1}</span>
+                      <button className="prop-item-remove" onClick={() => removeMaterial(mat.id)}><i className="fas fa-times" /></button>
+                    </div>
+                    <div className="prop-field">
+                      <label>Material / Descrição</label>
+                      <input value={mat.desc} onChange={e => updateMaterial(mat.id,'desc',e.target.value)} className="prop-input" placeholder="Ex: Cabo 2,5mm² — 100m" />
+                    </div>
+                    <div className="prop-row prop-row-3">
+                      <div className="prop-field">
+                        <label>Qtd</label>
+                        <input type="number" min="1" value={mat.qty} onChange={e => updateMaterial(mat.id,'qty',Number(e.target.value))} className="prop-input" />
+                      </div>
+                      <div className="prop-field">
+                        <label>Unid.</label>
+                        <select value={mat.unit} onChange={e => updateMaterial(mat.id,'unit',e.target.value)} className="prop-input prop-select">
+                          {['un','pç','m','m²','rolo','cx','kg','vb'].map(u => <option key={u}>{u}</option>)}
+                        </select>
+                      </div>
+                      <div className="prop-field">
+                        <label>Valor unit. (R$)</label>
+                        <input type="number" min="0" step="0.01" value={mat.price} onChange={e => updateMaterial(mat.id,'price',Number(e.target.value))} className="prop-input" placeholder="0,00" />
+                      </div>
+                    </div>
+                    <div className="prop-item-total">Subtotal: <strong>{fmtBRL(mat.qty * mat.price)}</strong></div>
+                  </div>
+                ))}
+                <button className="prop-btn-add prop-btn-add-mat" onClick={addMaterial}>
+                  <i className="fas fa-plus" /> Adicionar material
+                </button>
+                {materials.length > 0 && (
+                  <div className="prop-materials-total">
+                    <span>Total de materiais</span>
+                    <strong>{fmtBRL(materialsTotal)}</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="prop-field" style={{marginTop:'8px'}}>
               <label>Observações técnicas</label>
               <textarea value={observations} onChange={e => setObservations(e.target.value)} className="prop-input prop-textarea" placeholder="Condições do serviço, exclusões, acessos necessários..." />
             </div>
           </section>
 
-          {/* ─── Gerar Proposta ────────────────────────────────── */}
           {error && <p className="prop-error"><i className="fas fa-exclamation-circle" /> {error}</p>}
 
           <button className="prop-btn-generate" onClick={handleGenerate}>
-            <i className="fas fa-paper-plane" />
-            Gerar Proposta
+            <i className="fas fa-paper-plane" /> Gerar Proposta
           </button>
 
-          {/* ─── Link gerado ───────────────────────────────────── */}
           {generatedUrl && (
             <div className="prop-generated-box">
               <div className="prop-generated-header">
@@ -376,7 +453,7 @@ export default function PropostaPage() {
           )}
         </aside>
 
-        {/* ═══ RIGHT – PREVIEW ════════════════════════════════════════ */}
+        {/* ═══ PREVIEW ════════════════════════════════════════════════ */}
         <main className="proposta-preview">
           <div className="prop-doc">
             <div className="prop-doc-header">
@@ -388,7 +465,9 @@ export default function PropostaPage() {
                 <p className="prop-doc-meta">Válida até: {addDays(date, validity)}</p>
               </div>
             </div>
+
             <div className="prop-doc-divider" />
+
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">DADOS DO CLIENTE</h4>
               <div className="prop-doc-client-grid">
@@ -399,28 +478,27 @@ export default function PropostaPage() {
                 {clientAddr && <div className="prop-doc-full-col"><span>Local do serviço</span><p>{clientAddr}</p></div>}
               </div>
             </div>
+
             {items.length > 0 && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">ESCOPO DE SERVIÇOS</h4>
-                <table className="prop-doc-table">
-                  <thead>
-                    <tr>
-                      <th>#</th><th>Descrição</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, idx) => (
-                      <tr key={item.id}>
-                        <td className="center">{idx+1}</td>
-                        <td>{item.desc}</td>
-                        <td className="center">{item.qty}</td>
-                        <td className="center">{item.unit}</td>
-                        <td className="right">{fmtBRL(item.price)}</td>
-                        <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="prop-doc-table-wrap">
+                  <table className="prop-doc-table">
+                    <thead><tr><th>#</th><th>Descrição</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
+                    <tbody>
+                      {items.map((item, idx) => (
+                        <tr key={item.id}>
+                          <td className="center">{idx+1}</td>
+                          <td>{item.desc}</td>
+                          <td className="center">{item.qty}</td>
+                          <td className="center">{item.unit}</td>
+                          <td className="right">{fmtBRL(item.price)}</td>
+                          <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 {!totalOverride && (
                   <div className="prop-doc-totals">
                     {discount > 0 && <>
@@ -432,6 +510,33 @@ export default function PropostaPage() {
                 )}
               </div>
             )}
+
+            {materialsIncluded && materials.length > 0 && (
+              <div className="prop-doc-section">
+                <h4 className="prop-doc-section-title">MATERIAIS INCLUSOS</h4>
+                <div className="prop-doc-table-wrap">
+                  <table className="prop-doc-table">
+                    <thead><tr><th>#</th><th>Material</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
+                    <tbody>
+                      {materials.map((mat, idx) => (
+                        <tr key={mat.id}>
+                          <td className="center">{idx+1}</td>
+                          <td>{mat.desc}</td>
+                          <td className="center">{mat.qty}</td>
+                          <td className="center">{mat.unit}</td>
+                          <td className="right">{fmtBRL(mat.price)}</td>
+                          <td className="right bold">{fmtBRL(mat.qty * mat.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="prop-doc-totals">
+                  <div className="prop-doc-total-row final"><span>TOTAL MATERIAIS</span><span>{fmtBRL(materialsTotal)}</span></div>
+                </div>
+              </div>
+            )}
+
             {displayTotal > 0 && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">VALOR DA PROPOSTA</h4>
@@ -441,26 +546,31 @@ export default function PropostaPage() {
                 </div>
               </div>
             )}
+
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">CONDIÇÕES DE PAGAMENTO</h4>
               <p className="prop-doc-text">{payment}</p>
+              <p className="prop-doc-text prop-doc-note">Chave PIX: {CNPJ} (CNPJ)</p>
               {paymentNotes && <p className="prop-doc-text prop-doc-note">{paymentNotes}</p>}
             </div>
-            {(deadline || materialIncluded || observations) && (
+
+            {(deadline || materialsIncluded || observations) && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">INFORMAÇÕES TÉCNICAS</h4>
                 {deadline && <p className="prop-doc-text"><strong>Prazo de execução:</strong> {deadline}</p>}
-                <p className="prop-doc-text"><strong>Materiais:</strong> {materialIncluded ? 'Inclusos no valor.' : 'Não inclusos.'}</p>
+                <p className="prop-doc-text"><strong>Materiais:</strong> {materialsIncluded ? 'Inclusos conforme tabela acima.' : 'Não inclusos nesta proposta.'}</p>
                 {observations && <p className="prop-doc-text"><strong>Observações:</strong> {observations}</p>}
               </div>
             )}
+
             <div className="prop-doc-validity">
               <i className="fas fa-info-circle" />
               Válida por <strong>{validity} dias</strong> — expira em <strong>{addDays(date, validity)}</strong>.
             </div>
+
             <div className="prop-doc-footer">
               <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
-              <p>CNPJ 65.714.300/0001-88 · dcte.eletrotecnico@gmail.com</p>
+              <p>CNPJ {CNPJ} · dcte.eletrotecnico@gmail.com</p>
             </div>
           </div>
         </main>

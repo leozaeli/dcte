@@ -16,6 +16,8 @@ function decodeProposal<T>(str: string): T {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Item = { desc: string; qty: number; unit: string; price: number };
+const CNPJ = '65.714.300/0001-88';
+
 type Proposal = {
   number: string; date: string; validity: number;
   clientName: string; clientDoc: string; clientAddr: string; clientPhone: string; clientEmail: string;
@@ -23,7 +25,10 @@ type Proposal = {
   totalOverride: number | null;
   discount: number;
   payment: string; paymentNotes: string;
-  deadline: string; materialIncluded: boolean; observations: string;
+  deadline: string;
+  materialsIncluded: boolean;
+  materials: Item[];
+  observations: string;
 };
 
 function addDays(d: string, n: number) {
@@ -174,19 +179,50 @@ export default function ViewContent() {
             </div>
           )}
 
+          {/* Materials */}
+          {proposal.materialsIncluded && proposal.materials?.length > 0 && (
+            <div className="prop-doc-section">
+              <h4 className="prop-doc-section-title">MATERIAIS INCLUSOS</h4>
+              <div className="prop-doc-table-wrap">
+                <table className="prop-doc-table">
+                  <thead><tr><th>#</th><th>Material</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
+                  <tbody>
+                    {proposal.materials.map((mat, idx) => (
+                      <tr key={idx}>
+                        <td className="center">{idx+1}</td>
+                        <td>{mat.desc}</td>
+                        <td className="center">{mat.qty}</td>
+                        <td className="center">{mat.unit}</td>
+                        <td className="right">{fmtBRL(mat.price)}</td>
+                        <td className="right bold">{fmtBRL(mat.qty * mat.price)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="prop-doc-totals">
+                <div className="prop-doc-total-row final">
+                  <span>TOTAL MATERIAIS</span>
+                  <span>{fmtBRL(proposal.materials.reduce((s,m) => s + m.qty * m.price, 0))}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Payment */}
           <div className="prop-doc-section">
             <h4 className="prop-doc-section-title">CONDIÇÕES DE PAGAMENTO</h4>
             <p className="prop-doc-text">{proposal.payment}</p>
+            <p className="prop-doc-text prop-doc-note">Chave PIX: {CNPJ} (CNPJ)</p>
             {proposal.paymentNotes && <p className="prop-doc-text prop-doc-note">{proposal.paymentNotes}</p>}
           </div>
 
           {/* Technical */}
-          {(proposal.deadline || proposal.materialIncluded || proposal.observations) && (
+          {(proposal.deadline || proposal.materialsIncluded || proposal.observations) && (
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">INFORMAÇÕES TÉCNICAS</h4>
               {proposal.deadline && <p className="prop-doc-text"><strong>Prazo de execução:</strong> {proposal.deadline}</p>}
-              <p className="prop-doc-text"><strong>Materiais:</strong> {proposal.materialIncluded ? 'Inclusos no valor.' : 'Não inclusos.'}</p>
+              <p className="prop-doc-text"><strong>Materiais:</strong> {proposal.materialsIncluded ? 'Inclusos conforme tabela acima.' : 'Não inclusos nesta proposta.'}</p>
               {proposal.observations && <p className="prop-doc-text"><strong>Observações:</strong> {proposal.observations}</p>}
             </div>
           )}
