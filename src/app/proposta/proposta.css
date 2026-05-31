@@ -89,7 +89,7 @@
 /* ── Layout ──────────────────────────────────────────────────── */
 .proposta-layout {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 500px 1fr;
   flex: 1;
   min-height: 0;
 }
@@ -511,7 +511,8 @@
 }
 
 .prop-mat-card-bottom {
-  display: flex;
+  display: grid;
+  grid-template-columns: 72px 72px 1fr auto;
   gap: 8px;
   align-items: flex-end;
   padding-left: 28px;
@@ -520,7 +521,8 @@
 .prop-mat-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .prop-mat-field label {
@@ -530,22 +532,27 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-gray);
+  white-space: nowrap;
 }
 
-.prop-mat-field:nth-child(1) input { width: 60px; }
-.prop-mat-field:nth-child(2) select { width: 64px; }
-.prop-mat-field:nth-child(3) input { width: 90px; }
+.prop-mat-field input,
+.prop-mat-field select {
+  width: 100%;
+}
 
 .prop-mat-field-total {
-  margin-left: auto;
   text-align: right;
+  padding-bottom: 2px;
 }
+
+.prop-mat-field-total label { text-align: right; }
 
 .prop-mat-field-total span {
   font-family: var(--font-heading);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #90cdf4;
+  white-space: nowrap;
 }
 
 .prop-mat-num {
@@ -1456,6 +1463,12 @@
   .view-container { padding: 24px 16px 60px; }
   /* iOS: inputs menores que 16px disparam zoom automático */
   .prop-input, .view-reject-textarea { font-size: 16px !important; }
+  /* Material card: 2 colunas no tablet/mobile */
+  .prop-mat-card-bottom {
+    grid-template-columns: 1fr 1fr;
+    padding-left: 28px;
+  }
+  .prop-mat-field-total { grid-column: 1 / -1; text-align: right; border-top: 1px solid rgba(99,179,237,0.1); padding-top: 4px; }
 }
 
 @media (max-width: 480px) {
@@ -1463,9 +1476,13 @@
   .proposta-topbar { padding: 10px 14px; }
   .proposta-topbar-label { display: none; }
   .proposta-form { padding: 12px; }
-  .prop-section { padding: 16px; }
+  .prop-section { padding: 14px; }
   .prop-row { grid-template-columns: 1fr; }
   .prop-row-3 { grid-template-columns: 1fr 1fr; }
+  .prop-mat-card-bottom { padding-left: 0; grid-template-columns: 1fr 1fr; }
+  .prop-mat-field-total { grid-column: 1 / -1; }
+  .prop-value-row { flex-wrap: wrap; gap: 8px; }
+  .prop-value-input { width: 100% !important; }
   .prop-doc { padding: 20px 14px; font-size: 12px; }
   .prop-doc-number { font-size: 14px; }
   .prop-doc-total-hero-value { font-size: 18px; }
