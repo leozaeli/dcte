@@ -318,4 +318,8 @@ textarea.form-input { min-height: 140px; resize: vertical; }
   .section-title { font-size: 2rem; }
   .contact-form-box { padding: 24px; }
   .about-features { grid-template-columns: 1fr; }
+  .hero-avatar-box { width: 100%; max-width: 320px; height: 300px; }
+  .services-grid { grid-template-columns: 1fr; }
+  .portfolio-grid { grid-template-columns: 1fr; }
+  .norms-container { gap: 32px; }
 }
