@@ -197,12 +197,6 @@ export default function ViewContent() {
             Válida por <strong>{proposal.validity} dias</strong> — expira em <strong>{addDays(proposal.date, proposal.validity)}</strong>.
           </div>
 
-          {/* Signatures */}
-          <div className="prop-doc-signatures">
-            <div className="prop-doc-sig"><div className="prop-doc-sig-line" /><p>{proposal.clientName}</p><span>Contratante</span></div>
-            <div className="prop-doc-sig"><div className="prop-doc-sig-line" /><p>Deividson Charles</p><span>DCTE — Técnico em Eletrotécnica</span></div>
-          </div>
-
           <div className="prop-doc-footer">
             <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
             <p>(71) 99914-2157 · contato@dcte.com.br</p>
