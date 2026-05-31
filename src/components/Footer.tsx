@@ -49,10 +49,24 @@ export default function Footer() {
       </div>
 
       <div className="container footer-bottom">
-        <p>&copy; 2026 DCTE - Deividson Charles. Todos os direitos reservados. CRT/CFT Ativo.</p>
-        <div className="footer-legal-links">
-          <a href="#">Política de Privacidade</a>
-          <a href="#">Termos de Serviço</a>
+        <div>
+          <p>&copy; 2026 DCTE - Deividson Charles. Todos os direitos reservados. CRT/CFT Ativo.</p>
+          <p style={{ fontSize: "0.8rem", marginTop: "4px", opacity: 0.6 }}>CNPJ 65.714.300/0001-88</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <a
+            href="https://wa.me/5571999142157?text=Olá%20Deividson,%20estou%20no%20site%20DCTE%20e%20gostaria%20de%20um%20orçamento."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+            aria-label="WhatsApp"
+            style={{ fontSize: "1.3rem" }}
+          >
+            <i className="fab fa-whatsapp" />
+          </a>
+          <a href="mailto:dcte.eletrotecnico@gmail.com" className="footer-link" aria-label="E-mail" style={{ fontSize: "1.1rem" }}>
+            <i className="fas fa-envelope" />
+          </a>
         </div>
       </div>
     </footer>

@@ -24,6 +24,8 @@ const CATALOGUE: Record<string, string[]> = {
 };
 const ALL_SERVICES = Object.values(CATALOGUE).flat();
 
+const WHATSAPP = '5571999142157';
+
 const PAYMENT_OPTIONS = [
   'À vista (PIX / Transferência)',
   '50% na contratação + 50% na conclusão',
@@ -84,11 +86,16 @@ export default function PropostaPage() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
-  const suggestions = useMemo(() =>
-    search.length < 2 ? [] :
-    ALL_SERVICES.filter(s => s.toLowerCase().includes(search.toLowerCase())).slice(0, 8),
-    [search]
-  );
+  const categorizedSuggestions = useMemo(() => {
+    const term = search.toLowerCase();
+    return Object.entries(CATALOGUE).reduce<{ category: string; services: string[] }[]>((acc, [cat, services]) => {
+      const matched = term.length === 0
+        ? services
+        : services.filter(s => s.toLowerCase().includes(term) || cat.toLowerCase().includes(term));
+      if (matched.length > 0) acc.push({ category: cat, services: matched });
+      return acc;
+    }, []);
+  }, [search]);
 
   const addItem = useCallback((desc: string) => {
     setItems(prev => [...prev, { id: genId(), desc, qty: 1, unit: 'un', price: 0 }]);
@@ -128,7 +135,7 @@ export default function PropostaPage() {
 
   function handleSendWhatsApp() {
     const msg = encodeURIComponent(`Olá ${clientName}, segue sua proposta técnica DCTE:\n${generatedUrl}`);
-    window.open(`https://wa.me/5571999142157?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
   }
 
   function handlePrint() { window.print(); }
@@ -224,10 +231,17 @@ export default function PropostaPage() {
                   placeholder="Buscar serviço..."
                 />
               </div>
-              {showSuggestions && suggestions.length > 0 && (
+              {showSuggestions && categorizedSuggestions.length > 0 && (
                 <ul className="prop-suggestions">
-                  {suggestions.map(s => (
-                    <li key={s} onMouseDown={() => addItem(s)}>{s}</li>
+                  {categorizedSuggestions.map(({ category, services }) => (
+                    <li key={category} className="prop-suggestion-group">
+                      <span className="prop-suggestion-category">{category}</span>
+                      <ul>
+                        {services.map(s => (
+                          <li key={s} onMouseDown={() => addItem(s)}>{s}</li>
+                        ))}
+                      </ul>
+                    </li>
                   ))}
                 </ul>
               )}
@@ -446,7 +460,7 @@ export default function PropostaPage() {
             </div>
             <div className="prop-doc-footer">
               <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
-              <p>(71) 99914-2157 · contato@dcte.com.br</p>
+              <p>CNPJ 65.714.300/0001-88 · dcte.eletrotecnico@gmail.com</p>
             </div>
           </div>
         </main>

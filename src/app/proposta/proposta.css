@@ -239,15 +239,37 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.prop-suggestions li {
-  padding: 10px 14px;
+.prop-suggestions { max-height: 320px; overflow-y: auto; }
+
+.prop-suggestion-group { padding: 0; cursor: default; }
+.prop-suggestion-group:hover { background: none; }
+
+.prop-suggestion-category {
+  display: block;
+  padding: 8px 14px 4px;
+  font-size: 0.72rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--primary-gold);
+  background: rgba(245, 158, 11, 0.05);
+  border-top: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.prop-suggestion-group:first-child .prop-suggestion-category { border-top: none; }
+
+.prop-suggestion-group ul { list-style: none; padding: 0; margin: 0; }
+
+.prop-suggestion-group ul li {
+  padding: 8px 14px 8px 22px;
   font-size: 0.88rem;
   color: var(--text-light-gray);
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.prop-suggestions li:hover { background: rgba(245, 158, 11, 0.08); color: var(--text-white); }
+.prop-suggestion-group ul li:hover { background: rgba(245, 158, 11, 0.08); color: var(--text-white); }
 
 .prop-btn-add {
   background: transparent;

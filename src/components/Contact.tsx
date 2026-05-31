@@ -58,8 +58,10 @@ export default function Contact() {
                 href={`https://wa.me/${WHATSAPP}?text=Olá%20Deividson,%20gostaria%20de%20solicitar%20um%20orçamento%20técnico%20com%20a%20DCTE.`}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="btn btn-primary btn-glow-effect"
+                style={{ marginTop: "8px", display: "inline-flex", padding: "10px 20px", fontSize: "0.88rem" }}
               >
-                (71) 99914-2157
+                <i className="fab fa-whatsapp" /> Falar no WhatsApp
               </a>
             </div>
           </div>
@@ -71,7 +73,7 @@ export default function Contact() {
             <div className="contact-card-text">
               <h4>E-mail Profissional</h4>
               <p>Para envio de plantas de engenharia, especificações e termos de concorrência.</p>
-              <a href="mailto:contato@dcte.com.br">contato@dcte.com.br</a>
+              <a href="mailto:dcte.eletrotecnico@gmail.com">dcte.eletrotecnico@gmail.com</a>
             </div>
           </div>
 

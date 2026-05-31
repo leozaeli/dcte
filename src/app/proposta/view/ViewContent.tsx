@@ -199,7 +199,7 @@ export default function ViewContent() {
 
           <div className="prop-doc-footer">
             <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
-            <p>(71) 99914-2157 · contato@dcte.com.br</p>
+            <p>CNPJ 65.714.300/0001-88 · dcte.eletrotecnico@gmail.com</p>
           </div>
         </div>
 
