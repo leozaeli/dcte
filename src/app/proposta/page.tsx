@@ -82,6 +82,7 @@ export default function PropostaPage() {
   const [deadline, setDeadline] = useState('');
 
   const [materialsIncluded, setMaterialsIncluded] = useState(false);
+  const [fees, setFees] = useState('');
 
   const [observations, setObservations] = useState('');
   const [generatedUrl, setGeneratedUrl] = useState('');
@@ -122,12 +123,14 @@ export default function PropostaPage() {
       ? { ...i, mats: i.mats.map(m => m.id === matId ? { ...m, [key]: val } : m) }
       : i)), []);
 
-  const subtotal      = items.reduce((s, i) => s + i.qty * i.price, 0);
-  const discountVal   = subtotal * (discount / 100);
-  const calcLabor     = subtotal - discountVal;
-  const laborTotal    = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcLabor;
+  const subtotal       = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const discountVal    = subtotal * (discount / 100);
+  const calcLabor      = subtotal - discountVal;
+  const feesVal        = parseFloat(fees.replace(',', '.')) || 0;
+  const baseLaborTotal = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcLabor;
+  const laborTotal     = baseLaborTotal + feesVal;
   const materialsTotal = items.reduce((s, i) => s + i.mats.reduce((ms, m) => ms + m.qty * m.price, 0), 0);
-  const grandTotal    = laborTotal + (materialsIncluded ? materialsTotal : 0);
+  const grandTotal     = laborTotal + (materialsIncluded ? materialsTotal : 0);
 
   function handleGenerate() {
     if (!clientName.trim()) { setError('Preencha o nome do cliente para gerar a proposta.'); return; }
@@ -139,7 +142,7 @@ export default function PropostaPage() {
         ...rest,
         mats: materialsIncluded ? mats.map(({ id: _mid, ...m }) => m) : [],
       })),
-      laborOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
+      laborOverride: laborTotal > 0 ? laborTotal : null,
       discount,
       payment, paymentNotes,
       deadline,
@@ -170,7 +173,7 @@ export default function PropostaPage() {
     setClientName(''); setClientDoc(''); setClientAddr('');
     setClientPhone(''); setClientEmail(''); setObservations('');
     setDiscount(0); setDeadline(''); setPayment(PAYMENT_OPTIONS[0]);
-    setPaymentNotes(''); setTotalOverride('');
+    setPaymentNotes(''); setTotalOverride(''); setFees('');
     setGeneratedUrl(''); setError('');
   }
 
@@ -411,6 +414,24 @@ export default function PropostaPage() {
                     onChange={e => setTotalOverride(e.target.value)}
                     className="prop-input prop-value-input"
                     placeholder={items.length > 0 ? fmtBRL(calcLabor) : 'R$ 0,00'}
+                  />
+                </div>
+              </div>
+
+              {/* Taxas internas (não aparece na proposta) */}
+              <div className="prop-value-row prop-value-row-fees">
+                <div className="prop-value-label">
+                  <i className="fas fa-lock" />
+                  <span>Taxas internas</span>
+                  <span className="prop-value-hidden-tag">oculto</span>
+                </div>
+                <div className="prop-value-right">
+                  <input
+                    type="text"
+                    value={fees}
+                    onChange={e => setFees(e.target.value)}
+                    className="prop-input prop-value-input"
+                    placeholder="R$ 0,00"
                   />
                 </div>
               </div>
