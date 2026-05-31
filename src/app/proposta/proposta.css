@@ -472,7 +472,7 @@
   padding-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .prop-item-mats-header {
@@ -488,10 +488,64 @@
   margin-bottom: 2px;
 }
 
-.prop-mat-row {
+/* ── Material card (form) ────────────────────────────────────── */
+.prop-mat-card {
+  background: rgba(99,179,237,0.03);
+  border: 1px solid rgba(99,179,237,0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prop-mat-card-top {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.prop-mat-desc {
+  flex: 1;
+  min-width: 0;
+}
+
+.prop-mat-card-bottom {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding-left: 28px;
+}
+
+.prop-mat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.prop-mat-field label {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-gray);
+}
+
+.prop-mat-field:nth-child(1) input { width: 60px; }
+.prop-mat-field:nth-child(2) select { width: 64px; }
+.prop-mat-field:nth-child(3) input { width: 90px; }
+
+.prop-mat-field-total {
+  margin-left: auto;
+  text-align: right;
+}
+
+.prop-mat-field-total span {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #90cdf4;
 }
 
 .prop-mat-num {
@@ -506,12 +560,6 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-
-.prop-mat-desc { flex: 1; min-width: 0; font-size: 0.82rem; }
-.prop-mat-qty  { width: 52px; flex-shrink: 0; font-size: 0.82rem; }
-.prop-mat-unit { width: 56px; flex-shrink: 0; font-size: 0.82rem; }
-.prop-mat-price { width: 72px; flex-shrink: 0; font-size: 0.82rem; }
-.prop-mat-remove { flex-shrink: 0; }
 
 .prop-mat-add {
   background: transparent;
@@ -540,16 +588,39 @@
 
 .prop-mat-subtotal strong { color: #90cdf4; }
 
-/* ── Document: material sub-rows ────────────────────────────── */
-.prop-doc-mat-row { background: rgba(99,179,237,0.03) !important; }
+/* ── Document: material header + sub-rows ───────────────────── */
+.prop-doc-mat-header-row td { padding: 4px 10px 4px !important; }
+
+.prop-doc-mat-header-cell {
+  font-family: var(--font-heading) !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #90cdf4 !important;
+  padding-left: 20px !important;
+  background: rgba(99,179,237,0.05) !important;
+  border-top: 1px dashed rgba(99,179,237,0.2) !important;
+  border-bottom: none !important;
+}
+
+.prop-doc-mat-header-cell i { margin-right: 5px; }
+
+.prop-doc-mat-row { background: rgba(99,179,237,0.02) !important; }
+
+.prop-doc-mat-idx {
+  color: #90cdf4 !important;
+  font-size: 10px !important;
+  font-style: italic;
+}
 
 .prop-doc-mat-cell {
   color: var(--text-gray) !important;
-  font-size: 11.5px !important;
-  padding-left: 24px !important;
+  font-size: 12px !important;
+  padding-left: 20px !important;
 }
 
-.prop-doc-mat-cell i { color: #90cdf4; margin-right: 4px; font-size: 10px; }
+.prop-doc-mat-row td { border-bottom: 1px solid rgba(99,179,237,0.06) !important; }
 
 /* ── Valor breakdown (form) ─────────────────────────────────── */
 .prop-value-breakdown {

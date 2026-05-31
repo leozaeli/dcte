@@ -362,15 +362,32 @@ export default function PropostaPage() {
                       <i className="fas fa-boxes" /> Materiais deste serviço
                     </div>
                     {item.mats.map((mat, midx) => (
-                      <div className="prop-mat-row" key={mat.id}>
-                        <span className="prop-mat-num">{midx+1}</span>
-                        <input value={mat.desc} onChange={e => updateMat(item.id, mat.id,'desc',e.target.value)} className="prop-input prop-mat-desc" placeholder="Material..." />
-                        <input type="number" min="1" value={mat.qty} onChange={e => updateMat(item.id, mat.id,'qty',Number(e.target.value))} className="prop-input prop-mat-qty" />
-                        <select value={mat.unit} onChange={e => updateMat(item.id, mat.id,'unit',e.target.value)} className="prop-input prop-select prop-mat-unit">
-                          {['un','pç','m','m²','rolo','cx','kg','vb'].map(u => <option key={u}>{u}</option>)}
-                        </select>
-                        <input type="number" min="0" step="0.01" value={mat.price} onChange={e => updateMat(item.id, mat.id,'price',Number(e.target.value))} className="prop-input prop-mat-price" placeholder="R$" />
-                        <button className="prop-item-remove prop-mat-remove" onClick={() => removeMat(item.id, mat.id)}><i className="fas fa-times" /></button>
+                      <div className="prop-mat-card" key={mat.id}>
+                        <div className="prop-mat-card-top">
+                          <span className="prop-mat-num">{midx+1}</span>
+                          <input value={mat.desc} onChange={e => updateMat(item.id, mat.id,'desc',e.target.value)} className="prop-input prop-mat-desc" placeholder="Descrição do material..." />
+                          <button className="prop-item-remove" onClick={() => removeMat(item.id, mat.id)}><i className="fas fa-times" /></button>
+                        </div>
+                        <div className="prop-mat-card-bottom">
+                          <div className="prop-mat-field">
+                            <label>Qtd</label>
+                            <input type="number" min="1" value={mat.qty} onChange={e => updateMat(item.id, mat.id,'qty',Number(e.target.value))} className="prop-input" />
+                          </div>
+                          <div className="prop-mat-field">
+                            <label>Unid.</label>
+                            <select value={mat.unit} onChange={e => updateMat(item.id, mat.id,'unit',e.target.value)} className="prop-input prop-select">
+                              {['un','pç','m','m²','rolo','cx','kg','vb'].map(u => <option key={u}>{u}</option>)}
+                            </select>
+                          </div>
+                          <div className="prop-mat-field">
+                            <label>Valor unit. (R$)</label>
+                            <input type="number" min="0" step="0.01" value={mat.price} onChange={e => updateMat(item.id, mat.id,'price',Number(e.target.value))} className="prop-input" placeholder="0,00" />
+                          </div>
+                          <div className="prop-mat-field prop-mat-field-total">
+                            <label>Total</label>
+                            <span>{fmtBRL(mat.qty * mat.price)}</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                     <button className="prop-mat-add" onClick={() => addMat(item.id)}>
@@ -561,16 +578,26 @@ export default function PropostaPage() {
                             <td className="right">{fmtBRL(item.price)}</td>
                             <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
                           </tr>
-                          {materialsIncluded && item.mats.map(mat => (
-                            <tr key={mat.id} className="prop-doc-mat-row">
-                              <td />
-                              <td className="prop-doc-mat-cell"><i className="fas fa-cube" /> {mat.desc}</td>
-                              <td className="center">{mat.qty}</td>
-                              <td className="center">{mat.unit}</td>
-                              <td className="right">{fmtBRL(mat.price)}</td>
-                              <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
-                            </tr>
-                          ))}
+                          {materialsIncluded && item.mats.length > 0 && (
+                            <>
+                              <tr className="prop-doc-mat-header-row">
+                                <td />
+                                <td colSpan={5} className="prop-doc-mat-header-cell">
+                                  <i className="fas fa-boxes" /> Materiais
+                                </td>
+                              </tr>
+                              {item.mats.map((mat, midx) => (
+                                <tr key={mat.id} className="prop-doc-mat-row">
+                                  <td className="center prop-doc-mat-idx">{String.fromCharCode(97 + midx)})</td>
+                                  <td className="prop-doc-mat-cell">{mat.desc}</td>
+                                  <td className="center">{mat.qty}</td>
+                                  <td className="center">{mat.unit}</td>
+                                  <td className="right">{fmtBRL(mat.price)}</td>
+                                  <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
                         </>
                       ))}
                     </tbody>

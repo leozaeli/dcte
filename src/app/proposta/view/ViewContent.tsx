@@ -159,16 +159,26 @@ export default function ViewContent() {
                           <td className="right">{fmtBRL(item.price)}</td>
                           <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
                         </tr>
-                        {proposal.materialsIncluded && item.mats?.map((mat, midx) => (
-                          <tr key={`mat-${midx}`} className="prop-doc-mat-row">
-                            <td />
-                            <td className="prop-doc-mat-cell"><i className="fas fa-cube" /> {mat.desc}</td>
-                            <td className="center">{mat.qty}</td>
-                            <td className="center">{mat.unit}</td>
-                            <td className="right">{fmtBRL(mat.price)}</td>
-                            <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
-                          </tr>
-                        ))}
+                        {proposal.materialsIncluded && item.mats?.length > 0 && (
+                          <>
+                            <tr className="prop-doc-mat-header-row">
+                              <td />
+                              <td colSpan={5} className="prop-doc-mat-header-cell">
+                                <i className="fas fa-boxes" /> Materiais
+                              </td>
+                            </tr>
+                            {item.mats.map((mat, midx) => (
+                              <tr key={`mat-${midx}`} className="prop-doc-mat-row">
+                                <td className="center prop-doc-mat-idx">{String.fromCharCode(97 + midx)})</td>
+                                <td className="prop-doc-mat-cell">{mat.desc}</td>
+                                <td className="center">{mat.qty}</td>
+                                <td className="center">{mat.unit}</td>
+                                <td className="right">{fmtBRL(mat.price)}</td>
+                                <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
                       </>
                     ))}
                   </tbody>
