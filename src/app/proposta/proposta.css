@@ -239,37 +239,101 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.prop-suggestions { max-height: 320px; overflow-y: auto; }
+.prop-suggestions {
+  max-height: 360px;
+  overflow-y: auto;
+}
 
-.prop-suggestion-group { padding: 0; cursor: default; }
-.prop-suggestion-group:hover { background: none; }
+.prop-suggestion-group { list-style: none; }
 
+/* ── Categoria pai (accordion) ───────────────────────────────── */
+.prop-suggestion-parent {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.04);
+  border: none;
+  border-top: 1px solid rgba(245, 158, 11, 0.08);
+  color: var(--text-white);
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.prop-suggestion-group:first-child .prop-suggestion-parent { border-top: none; }
+
+.prop-suggestion-parent:hover,
+.prop-suggestion-parent.open { background: rgba(245, 158, 11, 0.09); color: var(--primary-gold); }
+
+.prop-suggestion-parent > span:first-child { flex: 1; }
+
+.prop-suggestion-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--primary-gold);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.prop-suggestion-arrow { font-size: 0.72rem; color: var(--text-gray); }
+.prop-suggestion-parent.open .prop-suggestion-arrow { color: var(--primary-gold); }
+
+/* ── Sub-itens ───────────────────────────────────────────────── */
+.prop-suggestion-children { list-style: none; padding: 0; margin: 0; }
+
+.prop-suggestion-children li {
+  padding: 8px 14px 8px 26px;
+  font-size: 0.86rem;
+  color: var(--text-light-gray);
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 2px solid rgba(245, 158, 11, 0.15);
+  margin-left: 14px;
+}
+
+.prop-suggestion-children li:hover { background: rgba(245, 158, 11, 0.08); color: var(--text-white); border-left-color: var(--primary-gold); }
+
+/* ── Modo busca (categoria como label) ───────────────────────── */
 .prop-suggestion-category {
   display: block;
-  padding: 8px 14px 4px;
-  font-size: 0.72rem;
+  padding: 7px 14px 4px;
+  font-size: 0.7rem;
   font-family: var(--font-heading);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--primary-gold);
-  background: rgba(245, 158, 11, 0.05);
-  border-top: 1px solid rgba(245, 158, 11, 0.1);
+  background: rgba(245, 158, 11, 0.04);
+  border-top: 1px solid rgba(245, 158, 11, 0.08);
 }
 
 .prop-suggestion-group:first-child .prop-suggestion-category { border-top: none; }
-
 .prop-suggestion-group ul { list-style: none; padding: 0; margin: 0; }
 
 .prop-suggestion-group ul li {
   padding: 8px 14px 8px 22px;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--text-light-gray);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .prop-suggestion-group ul li:hover { background: rgba(245, 158, 11, 0.08); color: var(--text-white); }
+
+.prop-suggestion-empty {
+  padding: 16px 14px;
+  font-size: 0.85rem;
+  color: var(--text-gray);
+  text-align: center;
+  cursor: default;
+}
+.prop-suggestion-empty:hover { background: none; }
 
 .prop-btn-add {
   background: transparent;

@@ -72,6 +72,7 @@ export default function PropostaPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const [totalOverride, setTotalOverride] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -88,13 +89,12 @@ export default function PropostaPage() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
-  // Services suggestions
-  const categorizedSuggestions = useMemo(() => {
+  // Services suggestions — filtered only when typing
+  const filteredSuggestions = useMemo(() => {
+    if (!search.trim()) return null; // null = show accordion mode
     const term = search.toLowerCase();
     return Object.entries(CATALOGUE).reduce<{ category: string; services: string[] }[]>((acc, [cat, services]) => {
-      const matched = term.length === 0
-        ? services
-        : services.filter(s => s.toLowerCase().includes(term) || cat.toLowerCase().includes(term));
+      const matched = services.filter(s => s.toLowerCase().includes(term) || cat.toLowerCase().includes(term));
       if (matched.length > 0) acc.push({ category: cat, services: matched });
       return acc;
     }, []);
@@ -249,18 +249,47 @@ export default function PropostaPage() {
                   placeholder="Clique para ver todos os serviços ou digite para filtrar..."
                 />
               </div>
-              {showSuggestions && categorizedSuggestions.length > 0 && (
+              {showSuggestions && (
                 <ul className="prop-suggestions">
-                  {categorizedSuggestions.map(({ category, services }) => (
-                    <li key={category} className="prop-suggestion-group">
-                      <span className="prop-suggestion-category">{category}</span>
-                      <ul>
-                        {services.map(s => (
-                          <li key={s} onMouseDown={() => addItem(s)}>{s}</li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
+                  {filteredSuggestions ? (
+                    /* ── Modo busca: mostra resultados filtrados expandidos ── */
+                    filteredSuggestions.length === 0
+                      ? <li className="prop-suggestion-empty">Nenhum resultado para &ldquo;{search}&rdquo;</li>
+                      : filteredSuggestions.map(({ category, services }) => (
+                          <li key={category} className="prop-suggestion-group">
+                            <span className="prop-suggestion-category">{category}</span>
+                            <ul>
+                              {services.map(s => (
+                                <li key={s} onMouseDown={() => addItem(s)}>{s}</li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))
+                  ) : (
+                    /* ── Modo accordion: só categorias, expande ao clicar ── */
+                    Object.entries(CATALOGUE).map(([cat, services]) => {
+                      const isOpen = expandedCategory === cat;
+                      return (
+                        <li key={cat} className="prop-suggestion-group">
+                          <button
+                            className={`prop-suggestion-parent ${isOpen ? 'open' : ''}`}
+                            onMouseDown={e => { e.preventDefault(); setExpandedCategory(isOpen ? null : cat); }}
+                          >
+                            <span>{cat}</span>
+                            <span className="prop-suggestion-count">{services.length}</span>
+                            <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} prop-suggestion-arrow`} />
+                          </button>
+                          {isOpen && (
+                            <ul className="prop-suggestion-children">
+                              {services.map(s => (
+                                <li key={s} onMouseDown={() => addItem(s)}>{s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })
+                  )}
                 </ul>
               )}
             </div>
