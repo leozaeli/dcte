@@ -212,7 +212,7 @@ export default function ViewContent() {
                 </div>
                 {proposal.materialsIncluded && matsTotal > 0 && (
                   <div className="prop-doc-value-row">
-                    <span>Materiais</span>
+                    <span>Valor dos Materiais</span>
                     <span>{fmtBRL(matsTotal)}</span>
                   </div>
                 )}

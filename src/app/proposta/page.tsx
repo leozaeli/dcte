@@ -628,7 +628,7 @@ export default function PropostaPage() {
                   </div>
                   {materialsIncluded && materialsTotal > 0 && (
                     <div className="prop-doc-value-row">
-                      <span>Materiais</span>
+                      <span>Valor dos Materiais</span>
                       <span>{fmtBRL(materialsTotal)}</span>
                     </div>
                   )}
