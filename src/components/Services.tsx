@@ -3,39 +3,87 @@ import ScrollReveal from "./ScrollReveal";
 const services = [
   {
     icon: "fas fa-bolt",
-    title: "Instalações e Manutenções",
-    description: "Execução e reforma de instalações elétricas complexas, correção de fator de potência, substituição de cabeamento obsoleto e balanceamento de cargas elétricas.",
+    title: "Instalações Elétricas",
+    description:
+      "Instalação de tomadas (simples, dupla, 20A e 220V), interruptores, pontos elétricos novos, circuitos dedicados, passagem de cabos, eletrodutos, canaletas, perfilados, eletrocalhas, ampliação e reforma de instalações.",
     linkLabel: "Solicitar Serviço",
   },
   {
-    icon: "fas fa-drafting-compass",
-    title: "Projetos Elétricos",
-    description: "Dimensionamento detalhado de diagramas unifilares, quadros de cargas, projetos luminotécnicos inteligentes com foco em economia de consumo e automação.",
-    linkLabel: "Ver Detalhes",
+    icon: "fas fa-th-large",
+    title: "Quadros Elétricos",
+    description:
+      "Instalação, substituição, montagem e organização de quadros de distribuição, instalação de disjuntores (mono, bi e tripolar), barramentos, balanceamento de cargas e identificação completa de circuitos.",
+    linkLabel: "Orçar Quadro",
   },
   {
     icon: "fas fa-shield-alt",
-    title: "SPDA & Aterramento",
-    description: "Inspeção detalhada, medições de resistividade de solo (método dos 4 eletrodos), projeto e laudo técnico para Sistema de Proteção contra Descargas Atmosféricas.",
-    linkLabel: "Pedir Laudo",
+    title: "Proteção Elétrica",
+    description:
+      "Instalação de DR e DPS, instalação e medição de aterramento, correção e adequação de aterramento, equipotencialização e proteção completa contra surtos elétricos.",
+    linkLabel: "Ver Detalhes",
   },
   {
-    icon: "fas fa-cogs",
-    title: "Painéis & Comandos",
-    description: "Montagem técnica impecável de quadros de distribuição, QTA (Quadro de Transferência Automática) para geradores e automação de comandos de bombas e motores.",
-    linkLabel: "Orçar Painel",
+    icon: "fas fa-lightbulb",
+    title: "Iluminação & LED",
+    description:
+      "Instalação de luminárias (sobrepor, embutida, painel LED, spot, pendente, lustre, refletor), sensores de presença, automação de iluminação e troca de lâmpadas.",
+    linkLabel: "Solicitar Serviço",
+  },
+  {
+    icon: "fas fa-tools",
+    title: "Manutenção Elétrica",
+    description:
+      "Visita técnica, diagnóstico de falhas, correção de curto-circuito, fuga de corrente e aquecimento em conexões, reparo em tomadas, interruptores e quadros. Manutenção preventiva e corretiva.",
+    linkLabel: "Agendar Visita",
+  },
+  {
+    icon: "fas fa-plug",
+    title: "Padrão de Entrada",
+    description:
+      "Instalação e adequação de padrão Coelba, troca de caixa de medição, instalação de ramal de entrada, aumento de carga e regularização completa junto à concessionária.",
+    linkLabel: "Solicitar Adequação",
+  },
+  {
+    icon: "fas fa-video",
+    title: "Segurança & CFTV",
+    description:
+      "Instalação de cerca elétrica, central de cerca, concertina, alarme residencial e comercial, sensores de presença e magnéticos. CFTV completo: câmeras IP e analógicas, DVR/NVR, acesso remoto e cabeamento.",
+    linkLabel: "Proteger Imóvel",
+  },
+  {
+    icon: "fas fa-network-wired",
+    title: "Rede, Dados & Acesso",
+    description:
+      "Cabeamento estruturado, certificação de pontos de rede, organização de rack, switch e roteador. Fechaduras eletrônicas, controle de acesso, videoporteiro e porteiro eletrônico.",
+    linkLabel: "Ver Detalhes",
+  },
+  {
+    icon: "fas fa-car",
+    title: "Veículos Elétricos",
+    description:
+      "Instalação de carregador Wallbox e portátil, circuito dedicado para carregador, adequação de quadro elétrico, DPS e DR específicos, avaliação de capacidade elétrica e infraestrutura para eletroposto.",
+    linkLabel: "Instalar Carregador",
+  },
+  {
+    icon: "fas fa-solar-panel",
+    title: "Energia Solar & AC",
+    description:
+      "Infraestrutura elétrica para sistemas fotovoltaicos, instalação de string box, DPS CC/CA, adequação de quadro e manutenção elétrica do sistema. Instalação de ponto e circuito dedicado para ar-condicionado.",
+    linkLabel: "Solicitar Projeto",
   },
   {
     icon: "fas fa-search",
-    title: "Laudos e Consultoria",
-    description: "Parecer técnico especializado, termografia infravermelha para identificar aquecimentos anômalos em conexões e auditoria para otimização de faturas de energia.",
-    linkLabel: "Consultar Técnico",
+    title: "Inspeções & Laudos",
+    description:
+      "Inspeção elétrica residencial, comercial e industrial. Termografia elétrica, medição de tensão, corrente e consumo, relatório e laudo técnico assinado com TRT conforme NBR 5410.",
+    linkLabel: "Pedir Laudo",
   },
   {
-    icon: "fas fa-home",
-    title: "Automação Residencial",
-    description: "Integração moderna de iluminação inteligente, controle térmico, automação de acessos e monitoramento integrado para o máximo de conforto e tecnologia.",
-    linkLabel: "Modernizar Casa",
+    icon: "fas fa-hard-hat",
+    title: "Consultoria & Projetos",
+    description:
+      "Visita técnica, consultoria elétrica, acompanhamento de obra, levantamento de cargas, projeto elétrico básico e projeto de carregamento para VEs. Atendimento emergencial 24 horas.",
+    linkLabel: "Falar com Técnico",
   },
 ];
 
@@ -49,7 +97,7 @@ export default function Services() {
             O que fazemos com <span>Máxima Precisão</span>
           </h2>
           <p className="section-description text-gray">
-            Aplicações técnicas industriais, comerciais e residenciais elaboradas com o mais alto rigor técnico.
+            Do residencial ao industrial — soluções elétricas completas com responsabilidade técnica e conformidade total com as normas vigentes.
           </p>
         </ScrollReveal>
 
