@@ -58,6 +58,16 @@ function encodeProposal(data: unknown): string {
   return btoa(chars.join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 
+function getInitials(name: string): string {
+  return name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() || '').join('').slice(0, 3) || 'XX';
+}
+
+function buildSlug(number: string, clientName: string): string {
+  // "DCTE-20260531-338" + "José Silva" → "20260531338-JS"
+  const numPart = number.replace('DCTE-', '').replace(/-/g, '');
+  return `${numPart}-${getInitials(clientName)}`;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function PropostaPage() {
   const [number] = useState(genNumber);
@@ -150,7 +160,8 @@ export default function PropostaPage() {
       observations,
     };
     const encoded = encodeProposal(data);
-    const url = `${window.location.origin}/proposta/view?p=${encoded}`;
+    const slug = buildSlug(number, clientName);
+    const url = `${window.location.origin}/proposta/${slug}#${encoded}`;
     setGeneratedUrl(url);
   }
 

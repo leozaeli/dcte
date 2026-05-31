@@ -1,0 +1,260 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Logo from '@/components/Logo';
+import '../proposta.css';
+
+// ─── Decode ───────────────────────────────────────────────────────────────────
+function decodeProposal<T>(str: string): T {
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4));
+  const chars = atob(base64 + padding);
+  const bytes = new Uint8Array(chars.split('').map(c => c.charCodeAt(0)));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Mat  = { desc: string; qty: number; unit: string; price: number };
+type Item = { desc: string; qty: number; unit: string; price: number; mats: Mat[] };
+
+const CNPJ = '65.714.300/0001-88';
+const WHATSAPP = '5571999142157';
+
+type Proposal = {
+  number: string; date: string; validity: number;
+  clientName: string; clientDoc: string; clientAddr: string;
+  clientPhone: string; clientEmail: string;
+  items: Item[];
+  laborOverride: number | null;
+  discount: number;
+  payment: string; paymentNotes: string;
+  deadline: string;
+  materialsIncluded: boolean;
+  observations: string;
+};
+
+function addDays(d: string, n: number) {
+  const dt = new Date(d + 'T12:00:00'); dt.setDate(dt.getDate() + n);
+  return dt.toLocaleDateString('pt-BR');
+}
+function fmtDate(d: string) { return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR'); }
+function fmtBRL(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+export default function SlugView() {
+  const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
+  useEffect(() => {
+    try {
+      const hash = window.location.hash.slice(1);
+      if (hash) setProposal(decodeProposal<Proposal>(hash));
+    } catch { /* invalid data */ }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#090a0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', fontFamily: 'Outfit, sans-serif' }}>
+        Carregando proposta...
+      </div>
+    );
+  }
+
+  if (!proposal) {
+    return (
+      <div className="view-error">
+        <i className="fas fa-exclamation-triangle" />
+        <h2>Proposta não encontrada</h2>
+        <p>O link pode estar incorreto ou expirado.</p>
+      </div>
+    );
+  }
+
+  const subtotal    = proposal.items.reduce((s, i) => s + i.qty * i.price, 0);
+  const discountVal = subtotal * (proposal.discount / 100);
+  const calcLabor   = subtotal - discountVal;
+  const laborTotal  = proposal.laborOverride ?? calcLabor;
+  const matsTotal   = proposal.materialsIncluded
+    ? proposal.items.reduce((s, i) => s + (i.mats || []).reduce((ms, m) => ms + m.qty * m.price, 0), 0)
+    : 0;
+  const grandTotal  = laborTotal + matsTotal;
+
+  function buildAcceptMsg() {
+    return encodeURIComponent(
+      `✅ *ACEITE DE PROPOSTA — DCTE*\n\n` +
+      `Proposta: ${proposal!.number}\n` +
+      `Cliente: ${proposal!.clientName}\n` +
+      (proposal!.clientAddr ? `Local: ${proposal!.clientAddr}\n` : '') +
+      `Valor: ${fmtBRL(grandTotal)}\n` +
+      (proposal!.items.length > 0
+        ? `\n*Serviços contratados:*\n${proposal!.items.map(i => `• ${i.desc} (${i.qty} ${i.unit})`).join('\n')}\n`
+        : '') +
+      `\n✅ *Aceito os termos desta proposta e confirmo a contratação dos serviços acima.*`
+    );
+  }
+
+  function buildRejectMsg(reason: string) {
+    return encodeURIComponent(
+      `❌ *RECUSA DE PROPOSTA — DCTE*\n\n` +
+      `Proposta: ${proposal!.number}\n` +
+      `Cliente: ${proposal!.clientName}\n` +
+      `Valor: ${fmtBRL(grandTotal)}\n\n` +
+      `*Motivo da recusa:*\n${reason}`
+    );
+  }
+
+  return (
+    <div className="view-root">
+      <div className="view-header"><Logo height={40} /></div>
+
+      <div className="view-container">
+        <div className="prop-doc">
+          <div className="prop-doc-header">
+            <Logo height={52} />
+            <div className="prop-doc-header-info">
+              <p className="prop-doc-type">PROPOSTA TÉCNICA COMERCIAL</p>
+              <p className="prop-doc-number">Nº {proposal.number}</p>
+              <p className="prop-doc-meta">Emissão: {fmtDate(proposal.date)}</p>
+              <p className="prop-doc-meta">Válida até: {addDays(proposal.date, proposal.validity)}</p>
+            </div>
+          </div>
+
+          <div className="prop-doc-divider" />
+
+          <div className="prop-doc-section">
+            <h4 className="prop-doc-section-title">DADOS DO CLIENTE</h4>
+            <div className="prop-doc-client-grid">
+              <div><span>Nome</span><p>{proposal.clientName}</p></div>
+              {proposal.clientDoc && <div><span>CPF/CNPJ</span><p>{proposal.clientDoc}</p></div>}
+              {proposal.clientPhone && <div><span>Telefone</span><p>{proposal.clientPhone}</p></div>}
+              {proposal.clientEmail && <div><span>E-mail</span><p>{proposal.clientEmail}</p></div>}
+              {proposal.clientAddr && <div className="prop-doc-full-col"><span>Local do serviço</span><p>{proposal.clientAddr}</p></div>}
+            </div>
+          </div>
+
+          {proposal.items.length > 0 && (
+            <div className="prop-doc-section">
+              <h4 className="prop-doc-section-title">ESCOPO DE SERVIÇOS</h4>
+              <div className="prop-doc-table-wrap">
+                <table className="prop-doc-table">
+                  <thead><tr><th>#</th><th>Descrição</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th></tr></thead>
+                  <tbody>
+                    {proposal.items.map((item, idx) => (
+                      <>
+                        <tr key={idx}>
+                          <td className="center">{idx + 1}</td>
+                          <td>{item.desc}</td>
+                          <td className="center">{item.qty}</td>
+                          <td className="center">{item.unit}</td>
+                          <td className="right">{fmtBRL(item.price)}</td>
+                          <td className="right bold">{fmtBRL(item.qty * item.price)}</td>
+                        </tr>
+                        {proposal.materialsIncluded && item.mats?.length > 0 && (
+                          <>
+                            <tr className="prop-doc-mat-header-row">
+                              <td />
+                              <td colSpan={5} className="prop-doc-mat-header-cell">
+                                <i className="fas fa-boxes" /> Materiais
+                              </td>
+                            </tr>
+                            {item.mats.map((mat, midx) => (
+                              <tr key={`m${midx}`} className="prop-doc-mat-row">
+                                <td className="center prop-doc-mat-idx">{String.fromCharCode(97 + midx)})</td>
+                                <td className="prop-doc-mat-cell">{mat.desc}</td>
+                                <td className="center">{mat.qty}</td>
+                                <td className="center">{mat.unit}</td>
+                                <td className="right">{fmtBRL(mat.price)}</td>
+                                <td className="right">{fmtBRL(mat.qty * mat.price)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!proposal.laborOverride && (() => {
+                return (
+                  <div className="prop-doc-totals">
+                    {proposal.discount > 0 && <>
+                      <div className="prop-doc-total-row"><span>Subtotal serviços</span><span>{fmtBRL(subtotal)}</span></div>
+                      <div className="prop-doc-total-row discount"><span>Desconto ({proposal.discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
+                    </>}
+                    {matsTotal > 0 && <div className="prop-doc-total-row"><span>Total materiais</span><span>{fmtBRL(matsTotal)}</span></div>}
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(grandTotal)}</span></div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {grandTotal > 0 && (
+            <div className="prop-doc-section">
+              <h4 className="prop-doc-section-title">VALOR DA PROPOSTA</h4>
+              <div className="prop-doc-value-breakdown">
+                <div className="prop-doc-value-row"><span>Mão de obra</span><span>{fmtBRL(laborTotal)}</span></div>
+                {proposal.materialsIncluded && matsTotal > 0 && (
+                  <div className="prop-doc-value-row"><span>Valor dos Materiais</span><span>{fmtBRL(matsTotal)}</span></div>
+                )}
+                <div className="prop-doc-value-row prop-doc-value-total">
+                  <span>TOTAL GERAL</span>
+                  <span className="prop-doc-total-hero-value">{fmtBRL(grandTotal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="prop-doc-section">
+            <h4 className="prop-doc-section-title">CONDIÇÕES DE PAGAMENTO</h4>
+            <p className="prop-doc-text">{proposal.payment}</p>
+            <p className="prop-doc-text prop-doc-note">Chave PIX: {CNPJ} (CNPJ)</p>
+            {proposal.paymentNotes && <p className="prop-doc-text prop-doc-note">{proposal.paymentNotes}</p>}
+          </div>
+
+          {(proposal.deadline || proposal.materialsIncluded || proposal.observations) && (
+            <div className="prop-doc-section">
+              <h4 className="prop-doc-section-title">INFORMAÇÕES TÉCNICAS</h4>
+              {proposal.deadline && <p className="prop-doc-text"><strong>Prazo de execução:</strong> {proposal.deadline}</p>}
+              <p className="prop-doc-text"><strong>Materiais:</strong> {proposal.materialsIncluded ? 'Inclusos conforme acima.' : 'Não inclusos nesta proposta.'}</p>
+              {proposal.observations && <p className="prop-doc-text"><strong>Observações:</strong> {proposal.observations}</p>}
+            </div>
+          )}
+
+          <div className="prop-doc-validity">
+            <i className="fas fa-info-circle" />
+            Válida por <strong>{proposal.validity} dias</strong> — expira em <strong>{addDays(proposal.date, proposal.validity)}</strong>.
+          </div>
+
+          <div className="prop-doc-footer">
+            <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
+            <p>CNPJ {CNPJ} · dcte.eletrotecnico@gmail.com</p>
+          </div>
+        </div>
+
+        <div className="view-actions">
+          <p className="view-actions-title">O que deseja fazer com esta proposta?</p>
+          <div className="view-actions-row">
+            <button className="view-btn-accept" onClick={() => window.open(`https://wa.me/${WHATSAPP}?text=${buildAcceptMsg()}`, '_blank')}>
+              <i className="fas fa-check-circle" /> Aceitar Proposta
+            </button>
+            <button className={`view-btn-reject ${rejectOpen ? 'open' : ''}`} onClick={() => setRejectOpen(v => !v)}>
+              <i className="fas fa-times-circle" /> Recusar Proposta
+            </button>
+          </div>
+          {rejectOpen && (
+            <div className="view-reject-box">
+              <label className="view-reject-label">Por que deseja recusar? (opcional)</label>
+              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="view-reject-textarea" placeholder="Ex: Valor acima do esperado..." rows={4} />
+              <button className="view-btn-reject-confirm" onClick={() => { if (rejectReason.trim()) window.open(`https://wa.me/${WHATSAPP}?text=${buildRejectMsg(rejectReason)}`, '_blank'); }} disabled={!rejectReason.trim()}>
+                <i className="fab fa-whatsapp" /> Enviar recusa via WhatsApp
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
