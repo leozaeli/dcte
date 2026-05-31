@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Logo from '@/components/Logo';
 import './proposta.css';
 
-// ─── Services catalogue ───────────────────────────────────────────────────────
+// ─── Catalogue ────────────────────────────────────────────────────────────────
 const CATALOGUE: Record<string, string[]> = {
   'Instalações Elétricas': ['Instalação de tomada simples','Instalação de tomada dupla','Instalação de tomada 20A','Instalação de tomada 220V','Instalação de interruptor simples','Instalação de interruptor paralelo','Instalação de interruptor intermediário','Instalação de ponto elétrico novo','Instalação de circuito dedicado','Passagem de cabos elétricos','Instalação de eletrodutos','Instalação de canaletas','Instalação de perfilados','Instalação de eletrocalhas','Ampliação de instalação elétrica','Reforma de instalação elétrica'],
   'Quadros Elétricos': ['Instalação de quadro de distribuição','Substituição de quadro elétrico','Montagem de quadro elétrico','Organização de quadro elétrico','Instalação de barramento','Instalação de disjuntor monopolar','Instalação de disjuntor bipolar','Instalação de disjuntor tripolar','Substituição de disjuntores','Balanceamento de cargas','Identificação de circuitos'],
@@ -13,7 +13,7 @@ const CATALOGUE: Record<string, string[]> = {
   'Manutenção Elétrica': ['Visita técnica','Diagnóstico de falha elétrica','Correção de curto-circuito','Correção de fuga de corrente','Correção de aquecimento em conexões','Reparo em tomadas','Reparo em interruptores','Reparo em quadros elétricos','Manutenção preventiva','Manutenção corretiva'],
   'Padrão de Entrada': ['Instalação de padrão de entrada','Adequação de padrão Coelba','Troca de caixa de medição','Instalação de ramal de entrada','Aumento de carga','Regularização junto à concessionária'],
   'Ar-Condicionado': ['Instalação de ponto para ar-condicionado','Instalação de circuito dedicado para AC','Adequação elétrica para ar-condicionado','Troca de disjuntor para climatização'],
-  'Fechaduras e Controle de Acesso': ['Instalação de fechadura eletrônica','Configuração de fechadura eletrônica','Instalação de controle de acesso','Instalação de videoporteiro','Instalação de porteiro eletrônico'],
+  'Fechaduras e Acesso': ['Instalação de fechadura eletrônica','Configuração de fechadura eletrônica','Instalação de controle de acesso','Instalação de videoporteiro','Instalação de porteiro eletrônico'],
   'Segurança Eletrônica': ['Instalação de cerca elétrica','Manutenção de cerca elétrica','Instalação de central de cerca elétrica','Instalação de concertina','Instalação de alarme residencial','Instalação de alarme comercial','Instalação de sensores de presença','Instalação de sensores magnéticos','Manutenção de sistema de alarme'],
   'CFTV': ['Instalação de câmera IP','Instalação de câmera analógica','Instalação de DVR','Instalação de NVR','Configuração de acesso remoto','Passagem de cabeamento para CFTV','Manutenção de sistema de câmeras'],
   'Rede e Dados': ['Instalação de ponto de rede','Cabeamento estruturado','Organização de rack','Instalação de switch','Instalação de roteador','Certificação de ponto de rede'],
@@ -22,7 +22,6 @@ const CATALOGUE: Record<string, string[]> = {
   'Inspeções e Laudos': ['Inspeção elétrica residencial','Inspeção elétrica comercial','Inspeção elétrica industrial','Termografia elétrica','Medição de tensão e corrente','Medição de consumo','Relatório técnico','Laudo técnico elétrico'],
   'Outros': ['Visita técnica','Consultoria elétrica','Acompanhamento técnico de obra','Levantamento de cargas','Projeto elétrico básico','Projeto de carregamento para veículos elétricos','Regularização de instalações elétricas','Atendimento emergencial 24 horas'],
 };
-
 const ALL_SERVICES = Object.values(CATALOGUE).flat();
 
 const PAYMENT_OPTIONS = [
@@ -44,11 +43,18 @@ function genNumber() {
 }
 function today() { return new Date().toISOString().split('T')[0]; }
 function addDays(d: string, n: number) {
-  const dt = new Date(d); dt.setDate(dt.getDate()+n);
+  const dt = new Date(d+'T12:00:00'); dt.setDate(dt.getDate()+n);
   return dt.toLocaleDateString('pt-BR');
 }
 function fmtDate(d: string) { return new Date(d+'T12:00:00').toLocaleDateString('pt-BR'); }
 function fmtBRL(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+function encodeProposal(data: unknown): string {
+  const json = JSON.stringify(data);
+  const bytes = new TextEncoder().encode(json);
+  const chars = Array.from(bytes, b => String.fromCharCode(b));
+  return btoa(chars.join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function PropostaPage() {
@@ -66,6 +72,7 @@ export default function PropostaPage() {
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  const [totalOverride, setTotalOverride] = useState('');
   const [discount, setDiscount] = useState(0);
   const [payment, setPayment] = useState(PAYMENT_OPTIONS[0]);
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -73,7 +80,9 @@ export default function PropostaPage() {
   const [materialIncluded, setMaterialIncluded] = useState(false);
   const [observations, setObservations] = useState('');
 
-  const printRef = useRef<HTMLDivElement>(null);
+  const [generatedUrl, setGeneratedUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
 
   const suggestions = useMemo(() =>
     search.length < 2 ? [] :
@@ -85,15 +94,42 @@ export default function PropostaPage() {
     setItems(prev => [...prev, { id: genId(), desc, qty: 1, unit: 'un', price: 0 }]);
     setSearch(''); setShowSuggestions(false);
   }, []);
-
   const removeItem = useCallback((id: string) => setItems(prev => prev.filter(i => i.id !== id)), []);
-
   const updateItem = useCallback(<K extends keyof Item>(id: string, key: K, val: Item[K]) =>
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i)), []);
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const discountVal = subtotal * (discount / 100);
-  const total = subtotal - discountVal;
+  const calcTotal = subtotal - discountVal;
+  const displayTotal = totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : calcTotal;
+
+  function handleGenerate() {
+    if (!clientName.trim()) { setError('Preencha o nome do cliente para gerar a proposta.'); return; }
+    setError('');
+    const data = {
+      number, date, validity,
+      clientName, clientDoc, clientAddr, clientPhone, clientEmail,
+      items: items.map(({ id: _id, ...rest }) => rest),
+      totalOverride: totalOverride ? parseFloat(totalOverride.replace(',', '.')) || 0 : null,
+      discount,
+      payment, paymentNotes,
+      deadline, materialIncluded, observations,
+    };
+    const encoded = encodeProposal(data);
+    const url = `${window.location.origin}/proposta/view?p=${encoded}`;
+    setGeneratedUrl(url);
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(generatedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleSendWhatsApp() {
+    const msg = encodeURIComponent(`Olá ${clientName}, segue sua proposta técnica DCTE:\n${generatedUrl}`);
+    window.open(`https://wa.me/5571999142157?text=${msg}`, '_blank');
+  }
 
   function handlePrint() { window.print(); }
 
@@ -102,12 +138,13 @@ export default function PropostaPage() {
     setItems([]); setClientName(''); setClientDoc(''); setClientAddr('');
     setClientPhone(''); setClientEmail(''); setObservations('');
     setDiscount(0); setDeadline(''); setPayment(PAYMENT_OPTIONS[0]);
-    setPaymentNotes(''); setMaterialIncluded(false);
+    setPaymentNotes(''); setMaterialIncluded(false); setTotalOverride('');
+    setGeneratedUrl(''); setError('');
   }
 
   return (
     <div className="proposta-root">
-      {/* ── Topbar ───────────────────────────────────────────────────── */}
+      {/* Topbar */}
       <div className="proposta-topbar no-print">
         <div className="proposta-topbar-logo">
           <Logo height={36} />
@@ -115,17 +152,16 @@ export default function PropostaPage() {
         </div>
         <div className="proposta-topbar-actions">
           <button className="prop-btn-ghost" onClick={handleClear}>Limpar</button>
-          <button className="prop-btn-primary" onClick={handlePrint}>
-            <i className="fas fa-print" /> Imprimir / PDF
+          <button className="prop-btn-ghost" onClick={handlePrint}>
+            <i className="fas fa-print" /> PDF
           </button>
         </div>
       </div>
 
       <div className="proposta-layout">
-        {/* ═══════════════ LEFT – FORM ═══════════════════════════════ */}
+        {/* ═══ LEFT – FORM ═══════════════════════════════════════════ */}
         <aside className="proposta-form no-print">
 
-          {/* Dados da proposta */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-file-alt" /> Dados da Proposta</h3>
             <div className="prop-row">
@@ -139,18 +175,15 @@ export default function PropostaPage() {
               </div>
             </div>
             <div className="prop-field">
-              <label>Validade (dias)</label>
+              <label>Validade</label>
               <div className="prop-chips">
                 {[7, 15, 30].map(v => (
-                  <button key={v} className={`prop-chip ${validity===v?'active':''}`} onClick={() => setValidity(v)}>
-                    {v} dias
-                  </button>
+                  <button key={v} className={`prop-chip ${validity===v?'active':''}`} onClick={() => setValidity(v)}>{v} dias</button>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* Dados do cliente */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-user" /> Dados do Cliente</h3>
             <div className="prop-field">
@@ -177,11 +210,8 @@ export default function PropostaPage() {
             </div>
           </section>
 
-          {/* Serviços */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-bolt" /> Serviços</h3>
-
-            {/* Search */}
             <div className="prop-search-wrap">
               <div className="prop-search-box">
                 <i className="fas fa-search prop-search-icon" />
@@ -202,23 +232,15 @@ export default function PropostaPage() {
                 </ul>
               )}
             </div>
-
-            {/* Custom add */}
             <button className="prop-btn-add" onClick={() => addItem(search.trim() || 'Serviço personalizado')}>
               <i className="fas fa-plus" /> Adicionar item personalizado
             </button>
-
-            {/* Items list */}
-            {items.length === 0 && (
-              <p className="prop-empty">Nenhum serviço adicionado ainda.</p>
-            )}
+            {items.length === 0 && <p className="prop-empty">Nenhum serviço adicionado ainda.</p>}
             {items.map((item, idx) => (
               <div className="prop-item" key={item.id}>
                 <div className="prop-item-header">
                   <span className="prop-item-num">{idx+1}</span>
-                  <button className="prop-item-remove" onClick={() => removeItem(item.id)}>
-                    <i className="fas fa-times" />
-                  </button>
+                  <button className="prop-item-remove" onClick={() => removeItem(item.id)}><i className="fas fa-times" /></button>
                 </div>
                 <div className="prop-field">
                   <label>Descrição</label>
@@ -240,13 +262,9 @@ export default function PropostaPage() {
                     <input type="number" min="0" step="0.01" value={item.price} onChange={e => updateItem(item.id,'price',Number(e.target.value))} className="prop-input" placeholder="0,00" />
                   </div>
                 </div>
-                <div className="prop-item-total">
-                  Subtotal: <strong>{fmtBRL(item.qty * item.price)}</strong>
-                </div>
+                <div className="prop-item-total">Subtotal: <strong>{fmtBRL(item.qty * item.price)}</strong></div>
               </div>
             ))}
-
-            {/* Discount */}
             {items.length > 0 && (
               <div className="prop-field prop-discount">
                 <label>Desconto (%)</label>
@@ -255,16 +273,40 @@ export default function PropostaPage() {
             )}
           </section>
 
-          {/* Pagamento */}
+          {/* ─── Valor da Proposta ─────────────────────────────── */}
+          <section className="prop-section">
+            <h3 className="prop-section-title"><i className="fas fa-dollar-sign" /> Valor da Proposta</h3>
+            {items.length > 0 && (
+              <div className="prop-total-calculated">
+                <span>Total calculado pelos itens</span>
+                <strong>{fmtBRL(calcTotal)}</strong>
+              </div>
+            )}
+            <div className="prop-field">
+              <label>Valor total manual (R$) {items.length > 0 && '— substitui o calculado'}</label>
+              <input
+                type="text"
+                value={totalOverride}
+                onChange={e => setTotalOverride(e.target.value)}
+                className="prop-input prop-total-input"
+                placeholder={items.length > 0 ? `Deixe vazio para usar ${fmtBRL(calcTotal)}` : 'Ex: 850,00'}
+              />
+            </div>
+            {displayTotal > 0 && (
+              <div className="prop-total-display">
+                <span>VALOR FINAL DA PROPOSTA</span>
+                <span className="prop-total-value">{fmtBRL(displayTotal)}</span>
+              </div>
+            )}
+          </section>
+
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-money-bill-wave" /> Pagamento</h3>
             <div className="prop-field">
               <label>Condição de pagamento</label>
               <div className="prop-chips prop-chips-wrap">
                 {PAYMENT_OPTIONS.map(opt => (
-                  <button key={opt} className={`prop-chip ${payment===opt?'active':''}`} onClick={() => setPayment(opt)}>
-                    {opt}
-                  </button>
+                  <button key={opt} className={`prop-chip ${payment===opt?'active':''}`} onClick={() => setPayment(opt)}>{opt}</button>
                 ))}
               </div>
             </div>
@@ -274,7 +316,6 @@ export default function PropostaPage() {
             </div>
           </section>
 
-          {/* Execução */}
           <section className="prop-section">
             <h3 className="prop-section-title"><i className="fas fa-calendar-check" /> Execução</h3>
             <div className="prop-field">
@@ -290,13 +331,40 @@ export default function PropostaPage() {
               <textarea value={observations} onChange={e => setObservations(e.target.value)} className="prop-input prop-textarea" placeholder="Condições do serviço, exclusões, acessos necessários..." />
             </div>
           </section>
+
+          {/* ─── Gerar Proposta ────────────────────────────────── */}
+          {error && <p className="prop-error"><i className="fas fa-exclamation-circle" /> {error}</p>}
+
+          <button className="prop-btn-generate" onClick={handleGenerate}>
+            <i className="fas fa-paper-plane" />
+            Gerar Proposta
+          </button>
+
+          {/* ─── Link gerado ───────────────────────────────────── */}
+          {generatedUrl && (
+            <div className="prop-generated-box">
+              <div className="prop-generated-header">
+                <i className="fas fa-check-circle" />
+                <span>Proposta gerada com sucesso!</span>
+              </div>
+              <p className="prop-generated-subtitle">Copie o link abaixo e envie ao cliente:</p>
+              <div className="prop-generated-url">
+                <span>{generatedUrl}</span>
+                <button onClick={handleCopy} className={`prop-copy-btn ${copied?'copied':''}`}>
+                  <i className={`fas fa-${copied?'check':'copy'}`} />
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+              <button className="prop-btn-whatsapp" onClick={handleSendWhatsApp}>
+                <i className="fab fa-whatsapp" /> Enviar link via WhatsApp
+              </button>
+            </div>
+          )}
         </aside>
 
-        {/* ═══════════════ RIGHT – PREVIEW ═══════════════════════════ */}
-        <main className="proposta-preview" ref={printRef}>
+        {/* ═══ RIGHT – PREVIEW ════════════════════════════════════════ */}
+        <main className="proposta-preview">
           <div className="prop-doc">
-
-            {/* Doc header */}
             <div className="prop-doc-header">
               <Logo height={52} />
               <div className="prop-doc-header-info">
@@ -306,10 +374,7 @@ export default function PropostaPage() {
                 <p className="prop-doc-meta">Válida até: {addDays(date, validity)}</p>
               </div>
             </div>
-
             <div className="prop-doc-divider" />
-
-            {/* Client block */}
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">DADOS DO CLIENTE</h4>
               <div className="prop-doc-client-grid">
@@ -320,20 +385,13 @@ export default function PropostaPage() {
                 {clientAddr && <div className="prop-doc-full-col"><span>Local do serviço</span><p>{clientAddr}</p></div>}
               </div>
             </div>
-
-            {/* Services table */}
             {items.length > 0 && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">ESCOPO DE SERVIÇOS</h4>
                 <table className="prop-doc-table">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>Descrição do Serviço</th>
-                      <th>Qtd</th>
-                      <th>Un.</th>
-                      <th>Valor Unit.</th>
-                      <th>Total</th>
+                      <th>#</th><th>Descrição</th><th>Qtd</th><th>Un.</th><th>Unit.</th><th>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -349,56 +407,47 @@ export default function PropostaPage() {
                     ))}
                   </tbody>
                 </table>
-
-                {/* Totals */}
-                <div className="prop-doc-totals">
-                  {discount > 0 && <>
-                    <div className="prop-doc-total-row"><span>Subtotal</span><span>{fmtBRL(subtotal)}</span></div>
-                    <div className="prop-doc-total-row discount"><span>Desconto ({discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
-                  </>}
-                  <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(total)}</span></div>
+                {!totalOverride && (
+                  <div className="prop-doc-totals">
+                    {discount > 0 && <>
+                      <div className="prop-doc-total-row"><span>Subtotal</span><span>{fmtBRL(subtotal)}</span></div>
+                      <div className="prop-doc-total-row discount"><span>Desconto ({discount}%)</span><span>- {fmtBRL(discountVal)}</span></div>
+                    </>}
+                    <div className="prop-doc-total-row final"><span>TOTAL</span><span>{fmtBRL(calcTotal)}</span></div>
+                  </div>
+                )}
+              </div>
+            )}
+            {displayTotal > 0 && (
+              <div className="prop-doc-section">
+                <h4 className="prop-doc-section-title">VALOR DA PROPOSTA</h4>
+                <div className="prop-doc-total-hero">
+                  <span>Valor Total</span>
+                  <span className="prop-doc-total-hero-value">{fmtBRL(displayTotal)}</span>
                 </div>
               </div>
             )}
-
-            {/* Payment */}
             <div className="prop-doc-section">
               <h4 className="prop-doc-section-title">CONDIÇÕES DE PAGAMENTO</h4>
               <p className="prop-doc-text">{payment}</p>
               {paymentNotes && <p className="prop-doc-text prop-doc-note">{paymentNotes}</p>}
             </div>
-
-            {/* Execution */}
             {(deadline || materialIncluded || observations) && (
               <div className="prop-doc-section">
                 <h4 className="prop-doc-section-title">INFORMAÇÕES TÉCNICAS</h4>
                 {deadline && <p className="prop-doc-text"><strong>Prazo de execução:</strong> {deadline}</p>}
-                <p className="prop-doc-text"><strong>Materiais:</strong> {materialIncluded ? 'Inclusos no valor da proposta.' : 'Não inclusos — a especificar em orçamento complementar.'}</p>
+                <p className="prop-doc-text"><strong>Materiais:</strong> {materialIncluded ? 'Inclusos no valor.' : 'Não inclusos.'}</p>
                 {observations && <p className="prop-doc-text"><strong>Observações:</strong> {observations}</p>}
               </div>
             )}
-
-            {/* Validity notice */}
             <div className="prop-doc-validity">
               <i className="fas fa-info-circle" />
-              Esta proposta é válida por <strong>{validity} dias</strong> a partir da data de emissão ({fmtDate(date)}), expirando em <strong>{addDays(date, validity)}</strong>.
+              Válida por <strong>{validity} dias</strong> — expira em <strong>{addDays(date, validity)}</strong>.
             </div>
-
-            {/* Signatures */}
             <div className="prop-doc-signatures">
-              <div className="prop-doc-sig">
-                <div className="prop-doc-sig-line" />
-                <p>{clientName || 'Cliente'}</p>
-                <span>Contratante</span>
-              </div>
-              <div className="prop-doc-sig">
-                <div className="prop-doc-sig-line" />
-                <p>Deividson Charles</p>
-                <span>DCTE — Técnico em Eletrotécnica</span>
-              </div>
+              <div className="prop-doc-sig"><div className="prop-doc-sig-line" /><p>{clientName || 'Cliente'}</p><span>Contratante</span></div>
+              <div className="prop-doc-sig"><div className="prop-doc-sig-line" /><p>Deividson Charles</p><span>DCTE — Técnico em Eletrotécnica</span></div>
             </div>
-
-            {/* Doc footer */}
             <div className="prop-doc-footer">
               <p>DCTE — Deividson Charles | Técnico em Eletrotécnica</p>
               <p>(71) 99914-2157 · contato@dcte.com.br</p>
