@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     type: "website",
     title: "DCTE - Deividson Charles | Técnico em Eletrotécnica Premium",
     description: "Soluções elétricas inteligentes, laudos, projetos e manutenção com máxima segurança por técnico credenciado.",
-    images: ["https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80"],
   },
   twitter: {
     card: "summary_large_image",
